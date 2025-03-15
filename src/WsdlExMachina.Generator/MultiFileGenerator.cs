@@ -243,160 +243,788 @@ public abstract class SoapClientBase
 
     private void GenerateServiceCollectionExtensions(string outputNamespace, string outputDirectory)
     {
-        // Create the ServiceCollectionExtensions.cs file directly
-        var content = @"using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http;
-using Polly;
-using Polly.Extensions.Http;
-using System;
-using System.Net.Http;
+        // Create XML documentation comments
+        var classComment = SyntaxFactory.TriviaList(
+            SyntaxFactory.Comment("/// <summary>"),
+            SyntaxFactory.Comment("/// Extension methods for registering SOAP clients with dependency injection."),
+            SyntaxFactory.Comment("/// </summary>")
+        );
 
-namespace " + outputNamespace + @".Extensions;
+        var addSoapClientComment = SyntaxFactory.TriviaList(
+            SyntaxFactory.Comment("/// <summary>"),
+            SyntaxFactory.Comment("/// Adds a SOAP client to the service collection."),
+            SyntaxFactory.Comment("/// </summary>"),
+            SyntaxFactory.Comment("/// <typeparam name=\"TInterface\">The service interface type.</typeparam>"),
+            SyntaxFactory.Comment("/// <typeparam name=\"TClient\">The client implementation type.</typeparam>"),
+            SyntaxFactory.Comment("/// <param name=\"services\">The service collection.</param>"),
+            SyntaxFactory.Comment("/// <param name=\"endpoint\">The SOAP service endpoint URL.</param>"),
+            SyntaxFactory.Comment("/// <param name=\"configureClient\">Optional action to configure the HttpClient.</param>"),
+            SyntaxFactory.Comment("/// <param name=\"configureBuilder\">Optional action to configure the HttpClientBuilder.</param>"),
+            SyntaxFactory.Comment("/// <returns>The service collection.</returns>")
+        );
 
-using " + outputNamespace + @".Client;
+        var addSoapClientWithPollyComment = SyntaxFactory.TriviaList(
+            SyntaxFactory.Comment("/// <summary>"),
+            SyntaxFactory.Comment("/// Adds a SOAP client to the service collection with Polly policies."),
+            SyntaxFactory.Comment("/// </summary>"),
+            SyntaxFactory.Comment("/// <typeparam name=\"TInterface\">The service interface type.</typeparam>"),
+            SyntaxFactory.Comment("/// <typeparam name=\"TClient\">The client implementation type.</typeparam>"),
+            SyntaxFactory.Comment("/// <param name=\"services\">The service collection.</param>"),
+            SyntaxFactory.Comment("/// <param name=\"endpoint\">The SOAP service endpoint URL.</param>"),
+            SyntaxFactory.Comment("/// <param name=\"configurePolly\">Optional action to configure the Polly policies.</param>"),
+            SyntaxFactory.Comment("/// <param name=\"configureClient\">Optional action to configure the HttpClient.</param>"),
+            SyntaxFactory.Comment("/// <returns>The service collection.</returns>")
+        );
 
-/// <summary>
-/// Extension methods for registering SOAP clients with dependency injection.
-/// </summary>
-public static class ServiceCollectionExtensions
-{
-    /// <summary>
-    /// Adds a SOAP client to the service collection.
-    /// </summary>
-    /// <typeparam name=""TInterface"">The service interface type.</typeparam>
-    /// <typeparam name=""TClient"">The client implementation type.</typeparam>
-    /// <param name=""services"">The service collection.</param>
-    /// <param name=""endpoint"">The SOAP service endpoint URL.</param>
-    /// <param name=""configureClient"">Optional action to configure the HttpClient.</param>
-    /// <param name=""configureBuilder"">Optional action to configure the HttpClientBuilder.</param>
-    /// <returns>The service collection.</returns>
-    public static IServiceCollection AddSoapClient<TInterface, TClient>(
-        this IServiceCollection services,
-        string endpoint,
-        Action<HttpClient>? configureClient = null,
-        Action<IHttpClientBuilder>? configureBuilder = null)
-        where TClient : class, TInterface
-        where TInterface : class
-    {
-        // Register the client options
-        services.AddSingleton(new SoapClientOptions { Endpoint = endpoint });
+        // Create generic type parameters for the extension methods
+        var tInterfaceParameter = TypeParameter("TInterface");
+        var tClientParameter = TypeParameter("TClient");
 
-        // Register the HTTP client
-        var builder = services.AddHttpClient<TInterface, TClient>((serviceProvider, client) =>
-        {
-            // Configure base address if endpoint is a base URL
-            if (Uri.TryCreate(endpoint, UriKind.Absolute, out var uri))
-            {
-                client.BaseAddress = uri;
-            }
+        // Create the AddSoapClient method
+        var addSoapClientMethod = MethodDeclaration(
+                ParseTypeName("IServiceCollection"),
+                Identifier("AddSoapClient")
+            )
+            .WithTypeParameterList(
+                TypeParameterList(
+                    SeparatedList(new[] {
+                        tInterfaceParameter,
+                        tClientParameter
+                    })
+                )
+            )
+            .WithModifiers(
+                TokenList(
+                    Token(SyntaxKind.PublicKeyword),
+                    Token(SyntaxKind.StaticKeyword)
+                )
+            )
+            .WithParameterList(
+                ParameterList(
+                    SeparatedList(new[] {
+                        Parameter(Identifier("services"))
+                            .WithModifiers(TokenList(Token(SyntaxKind.ThisKeyword)))
+                            .WithType(ParseTypeName("IServiceCollection")),
+                        Parameter(Identifier("endpoint"))
+                            .WithType(ParseTypeName("string")),
+                        Parameter(Identifier("configureClient"))
+                            .WithType(ParseTypeName("Action<HttpClient>?"))
+                            .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.NullLiteralExpression))),
+                        Parameter(Identifier("configureBuilder"))
+                            .WithType(ParseTypeName("Action<IHttpClientBuilder>?"))
+                            .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.NullLiteralExpression)))
+                    })
+                )
+            )
+            .WithConstraintClauses(
+                List(new[] {
+                    TypeParameterConstraintClause(
+                        IdentifierName("TClient"),
+                        SeparatedList<TypeParameterConstraintSyntax>(new TypeParameterConstraintSyntax[] {
+                            ClassOrStructConstraint(SyntaxKind.ClassConstraint),
+                            TypeConstraint(ParseTypeName("TInterface"))
+                        })
+                    ),
+                    TypeParameterConstraintClause(
+                        IdentifierName("TInterface"),
+                        SeparatedList<TypeParameterConstraintSyntax>(new TypeParameterConstraintSyntax[] {
+                            ClassOrStructConstraint(SyntaxKind.ClassConstraint)
+                        })
+                    )
+                })
+            )
+            .WithBody(
+                Block(
+                    // Register the client options
+                    ExpressionStatement(
+                        InvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("services"),
+                                IdentifierName("AddSingleton")
+                            )
+                        )
+                        .WithArgumentList(
+                            ArgumentList(
+                                SingletonSeparatedList(
+                                    Argument(
+                                        ObjectCreationExpression(
+                                            ParseTypeName("SoapClientOptions")
+                                        )
+                                        .WithInitializer(
+                                            InitializerExpression(
+                                                SyntaxKind.ObjectInitializerExpression,
+                                                SingletonSeparatedList<ExpressionSyntax>(
+                                                    AssignmentExpression(
+                                                        SyntaxKind.SimpleAssignmentExpression,
+                                                        IdentifierName("Endpoint"),
+                                                        IdentifierName("endpoint")
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
 
-            // Apply additional configuration
-            configureClient?.Invoke(client);
-        });
+                    // Register the HTTP client
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            ParseTypeName("var"),
+                            SingletonSeparatedList(
+                                VariableDeclarator(
+                                    Identifier("builder")
+                                )
+                                .WithInitializer(
+                                    EqualsValueClause(
+                                        InvocationExpression(
+                                            MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName("services"),
+                                                GenericName(
+                                                    Identifier("AddHttpClient")
+                                                )
+                                                .WithTypeArgumentList(
+                                                    TypeArgumentList(
+                                                        SeparatedList<TypeSyntax>(
+                                                            new[] {
+                                                                ParseTypeName("TInterface"),
+                                                                ParseTypeName("TClient")
+                                                            }
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                        .WithArgumentList(
+                                            ArgumentList(
+                                                SingletonSeparatedList(
+                                                    Argument(
+                                                        ParenthesizedLambdaExpression()
+                                                            .WithParameterList(
+                                                                ParameterList(
+                                                                    SeparatedList(
+                                                                        new[] {
+                                                                            Parameter(Identifier("serviceProvider")),
+                                                                            Parameter(Identifier("client"))
+                                                                        }
+                                                                    )
+                                                                )
+                                                            )
+                                                            .WithBody(
+                                                                Block(
+                                                                    // Configure base address if endpoint is a base URL
+                                                                    IfStatement(
+                                                                        InvocationExpression(
+                                                                            MemberAccessExpression(
+                                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                                ParseTypeName("Uri"),
+                                                                                IdentifierName("TryCreate")
+                                                                            )
+                                                                        )
+                                                                        .WithArgumentList(
+                                                                            ArgumentList(
+                                                                                SeparatedList(
+                                                                                    new[] {
+                                                                                        Argument(IdentifierName("endpoint")),
+                                                                                        Argument(
+                                                                                            MemberAccessExpression(
+                                                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                                                ParseTypeName("UriKind"),
+                                                                                                IdentifierName("Absolute")
+                                                                                            )
+                                                                                        ),
+                                                                                        Argument(
+                                                                                            DeclarationExpression(
+                                                                                                ParseTypeName("var"),
+                                                                                                SingleVariableDesignation(
+                                                                                                    Identifier("uri")
+                                                                                                )
+                                                                                            )
+                                                                                        )
+                                                                                    }
+                                                                                )
+                                                                            )
+                                                                        ),
+                                                                        Block(
+                                                                            ExpressionStatement(
+                                                                                AssignmentExpression(
+                                                                                    SyntaxKind.SimpleAssignmentExpression,
+                                                                                    MemberAccessExpression(
+                                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                                        IdentifierName("client"),
+                                                                                        IdentifierName("BaseAddress")
+                                                                                    ),
+                                                                                    IdentifierName("uri")
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    ),
 
-        // Apply additional builder configuration
-        configureBuilder?.Invoke(builder);
+                                                                    // Apply additional configuration
+                                                                    ExpressionStatement(
+                                                                        ConditionalAccessExpression(
+                                                                            IdentifierName("configureClient"),
+                                                                            InvocationExpression(
+                                                                                MemberBindingExpression(
+                                                                                    IdentifierName("Invoke")
+                                                                                )
+                                                                            )
+                                                                            .WithArgumentList(
+                                                                                ArgumentList(
+                                                                                    SingletonSeparatedList(
+                                                                                        Argument(
+                                                                                            IdentifierName("client")
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
 
-        return services;
-    }
+                    // Apply additional builder configuration
+                    ExpressionStatement(
+                        ConditionalAccessExpression(
+                            IdentifierName("configureBuilder"),
+                            InvocationExpression(
+                                MemberBindingExpression(
+                                    IdentifierName("Invoke")
+                                )
+                            )
+                            .WithArgumentList(
+                                ArgumentList(
+                                    SingletonSeparatedList(
+                                        Argument(
+                                            IdentifierName("builder")
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
 
-    /// <summary>
-    /// Adds a SOAP client to the service collection with Polly policies.
-    /// </summary>
-    /// <typeparam name=""TInterface"">The service interface type.</typeparam>
-    /// <typeparam name=""TClient"">The client implementation type.</typeparam>
-    /// <param name=""services"">The service collection.</param>
-    /// <param name=""endpoint"">The SOAP service endpoint URL.</param>
-    /// <param name=""configurePolly"">Optional action to configure the Polly policies.</param>
-    /// <param name=""configureClient"">Optional action to configure the HttpClient.</param>
-    /// <returns>The service collection.</returns>
-    public static IServiceCollection AddSoapClientWithPolly<TInterface, TClient>(
-        this IServiceCollection services,
-        string endpoint,
-        Action<PollyPolicyOptions>? configurePolly = null,
-        Action<HttpClient>? configureClient = null)
-        where TClient : class, TInterface
-        where TInterface : class
-    {
-        // Default policy options
-        var policyOptions = new PollyPolicyOptions
-        {
-            RetryCount = 3,
-            TimeoutSeconds = 30
-        };
+                    // Return the service collection
+                    ReturnStatement(
+                        IdentifierName("services")
+                    )
+                )
+            )
+            .WithLeadingTrivia(addSoapClientComment);
 
-        // Apply custom configuration
-        configurePolly?.Invoke(policyOptions);
+        // Create the AddSoapClientWithPolly method
+        var addSoapClientWithPollyMethod = MethodDeclaration(
+                ParseTypeName("IServiceCollection"),
+                Identifier("AddSoapClientWithPolly")
+            )
+            .WithTypeParameterList(
+                TypeParameterList(
+                    SeparatedList(new[] {
+                        TypeParameter("TInterface"),
+                        TypeParameter("TClient")
+                    })
+                )
+            )
+            .WithModifiers(
+                TokenList(
+                    Token(SyntaxKind.PublicKeyword),
+                    Token(SyntaxKind.StaticKeyword)
+                )
+            )
+            .WithParameterList(
+                ParameterList(
+                    SeparatedList(new[] {
+                        Parameter(Identifier("services"))
+                            .WithModifiers(TokenList(Token(SyntaxKind.ThisKeyword)))
+                            .WithType(ParseTypeName("IServiceCollection")),
+                        Parameter(Identifier("endpoint"))
+                            .WithType(ParseTypeName("string")),
+                        Parameter(Identifier("configurePolly"))
+                            .WithType(ParseTypeName("Action<PollyPolicyOptions>?"))
+                            .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.NullLiteralExpression))),
+                        Parameter(Identifier("configureClient"))
+                            .WithType(ParseTypeName("Action<HttpClient>?"))
+                            .WithDefault(EqualsValueClause(LiteralExpression(SyntaxKind.NullLiteralExpression)))
+                    })
+                )
+            )
+            .WithConstraintClauses(
+                List(new[] {
+                    TypeParameterConstraintClause(
+                        IdentifierName("TClient"),
+                        SeparatedList<TypeParameterConstraintSyntax>(new TypeParameterConstraintSyntax[] {
+                            ClassOrStructConstraint(SyntaxKind.ClassConstraint),
+                            TypeConstraint(ParseTypeName("TInterface"))
+                        })
+                    ),
+                    TypeParameterConstraintClause(
+                        IdentifierName("TInterface"),
+                        SeparatedList<TypeParameterConstraintSyntax>(new TypeParameterConstraintSyntax[] {
+                            ClassOrStructConstraint(SyntaxKind.ClassConstraint)
+                        })
+                    )
+                })
+            )
+            .WithBody(
+                Block(
+                    // Default policy options
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            ParseTypeName("var"),
+                            SingletonSeparatedList(
+                                VariableDeclarator(
+                                    Identifier("policyOptions")
+                                )
+                                .WithInitializer(
+                                    EqualsValueClause(
+                                        ObjectCreationExpression(
+                                            ParseTypeName("PollyPolicyOptions")
+                                        )
+                                        .WithInitializer(
+                                            InitializerExpression(
+                                                SyntaxKind.ObjectInitializerExpression,
+                                                SeparatedList<ExpressionSyntax>(
+                                                    new[] {
+                                                        AssignmentExpression(
+                                                            SyntaxKind.SimpleAssignmentExpression,
+                                                            IdentifierName("RetryCount"),
+                                                            LiteralExpression(
+                                                                SyntaxKind.NumericLiteralExpression,
+                                                                Literal(3)
+                                                            )
+                                                        ),
+                                                        AssignmentExpression(
+                                                            SyntaxKind.SimpleAssignmentExpression,
+                                                            IdentifierName("TimeoutSeconds"),
+                                                            LiteralExpression(
+                                                                SyntaxKind.NumericLiteralExpression,
+                                                                Literal(30)
+                                                            )
+                                                        )
+                                                    }
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
 
-        return services.AddSoapClient<TInterface, TClient>(
-            endpoint,
-            configureClient,
-            builder =>
-            {
-                // Add timeout policy
-                builder.AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(
-                    TimeSpan.FromSeconds(policyOptions.TimeoutSeconds)));
+                    // Apply custom configuration
+                    ExpressionStatement(
+                        ConditionalAccessExpression(
+                            IdentifierName("configurePolly"),
+                            InvocationExpression(
+                                MemberBindingExpression(
+                                    IdentifierName("Invoke")
+                                )
+                            )
+                            .WithArgumentList(
+                                ArgumentList(
+                                    SingletonSeparatedList(
+                                        Argument(
+                                            IdentifierName("policyOptions")
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
 
-                // Add retry policy
-                builder.AddTransientHttpErrorPolicy(policy => policy
-                    .WaitAndRetryAsync(
-                        policyOptions.RetryCount,
-                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(retryAttempt, 2))));
-            });
-    }
-}
+                    // Return services.AddSoapClient<TInterface, TClient>
+                    ReturnStatement(
+                        InvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("services"),
+                                GenericName(
+                                    Identifier("AddSoapClient")
+                                )
+                                .WithTypeArgumentList(
+                                    TypeArgumentList(
+                                        SeparatedList<TypeSyntax>(
+                                            new[] {
+                                                ParseTypeName("TInterface"),
+                                                ParseTypeName("TClient")
+                                            }
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                        .WithArgumentList(
+                            ArgumentList(
+                                SeparatedList(
+                                    new[] {
+                                        Argument(IdentifierName("endpoint")),
+                                        Argument(IdentifierName("configureClient")),
+                                        Argument(
+                                            SimpleLambdaExpression(
+                                                Parameter(Identifier("builder")),
+                                                Block(
+                                                    // Add timeout policy
+                                                    ExpressionStatement(
+                                                        InvocationExpression(
+                                                            MemberAccessExpression(
+                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                IdentifierName("builder"),
+                                                                IdentifierName("AddPolicyHandler")
+                                                            )
+                                                        )
+                                                        .WithArgumentList(
+                                                            ArgumentList(
+                                                                SingletonSeparatedList(
+                                                                    Argument(
+                                                                        InvocationExpression(
+                                                                            MemberAccessExpression(
+                                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                                ParseTypeName("Policy"),
+                                                                                GenericName(
+                                                                                    Identifier("TimeoutAsync")
+                                                                                )
+                                                                                .WithTypeArgumentList(
+                                                                                    TypeArgumentList(
+                                                                                        SingletonSeparatedList<TypeSyntax>(
+                                                                                            ParseTypeName("HttpResponseMessage")
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                        .WithArgumentList(
+                                                                            ArgumentList(
+                                                                                SingletonSeparatedList(
+                                                                                    Argument(
+                                                                                        InvocationExpression(
+                                                                                            MemberAccessExpression(
+                                                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                                                ParseTypeName("TimeSpan"),
+                                                                                                IdentifierName("FromSeconds")
+                                                                                            )
+                                                                                        )
+                                                                                        .WithArgumentList(
+                                                                                            ArgumentList(
+                                                                                                SingletonSeparatedList(
+                                                                                                    Argument(
+                                                                                                        MemberAccessExpression(
+                                                                                                            SyntaxKind.SimpleMemberAccessExpression,
+                                                                                                            IdentifierName("policyOptions"),
+                                                                                                            IdentifierName("TimeoutSeconds")
+                                                                                                        )
+                                                                                                    )
+                                                                                                )
+                                                                                            )
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    ),
 
-/// <summary>
-/// Options for configuring Polly policies.
-/// </summary>
-public class PollyPolicyOptions
-{
-    /// <summary>
-    /// Gets or sets the number of retry attempts.
-    /// </summary>
-    public int RetryCount { get; set; } = 3;
+                                                    // Add retry policy
+                                                    ExpressionStatement(
+                                                        InvocationExpression(
+                                                            MemberAccessExpression(
+                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                IdentifierName("builder"),
+                                                                IdentifierName("AddTransientHttpErrorPolicy")
+                                                            )
+                                                        )
+                                                        .WithArgumentList(
+                                                            ArgumentList(
+                                                                SingletonSeparatedList(
+                                                                    Argument(
+                                                                        SimpleLambdaExpression(
+                                                                            Parameter(Identifier("policy")),
+                                                                            InvocationExpression(
+                                                                                MemberAccessExpression(
+                                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                                    IdentifierName("policy"),
+                                                                                    IdentifierName("WaitAndRetryAsync")
+                                                                                )
+                                                                            )
+                                                                            .WithArgumentList(
+                                                                                ArgumentList(
+                                                                                    SeparatedList(
+                                                                                        new[] {
+                                                                                            Argument(
+                                                                                                MemberAccessExpression(
+                                                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                                                    IdentifierName("policyOptions"),
+                                                                                                    IdentifierName("RetryCount")
+                                                                                                )
+                                                                                            ),
+                                                                                            Argument(
+                                                                                                SimpleLambdaExpression(
+                                                                                                    Parameter(Identifier("retryAttempt")),
+                                                                                                    InvocationExpression(
+                                                                                                        MemberAccessExpression(
+                                                                                                            SyntaxKind.SimpleMemberAccessExpression,
+                                                                                                            ParseTypeName("TimeSpan"),
+                                                                                                            IdentifierName("FromSeconds")
+                                                                                                        )
+                                                                                                    )
+                                                                                                    .WithArgumentList(
+                                                                                                        ArgumentList(
+                                                                                                            SingletonSeparatedList(
+                                                                                                                Argument(
+                                                                                                                    InvocationExpression(
+                                                                                                                        MemberAccessExpression(
+                                                                                                                            SyntaxKind.SimpleMemberAccessExpression,
+                                                                                                                            ParseTypeName("Math"),
+                                                                                                                            IdentifierName("Pow")
+                                                                                                                        )
+                                                                                                                    )
+                                                                                                                    .WithArgumentList(
+                                                                                                                        ArgumentList(
+                                                                                                                            SeparatedList(
+                                                                                                                                new[] {
+                                                                                                                                    Argument(IdentifierName("retryAttempt")),
+                                                                                                                                    Argument(
+                                                                                                                                        LiteralExpression(
+                                                                                                                                            SyntaxKind.NumericLiteralExpression,
+                                                                                                                                            Literal(2)
+                                                                                                                                        )
+                                                                                                                                    )
+                                                                                                                                }
+                                                                                                                            )
+                                                                                                                        )
+                                                                                                                    )
+                                                                                                                )
+                                                                                                            )
+                                                                                                        )
+                                                                                                    )
+                                                                                                )
+                                                                                            )
+                                                                                        }
+                                                                                    )
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    }
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            .WithLeadingTrivia(addSoapClientWithPollyComment);
 
-    /// <summary>
-    /// Gets or sets the timeout in seconds.
-    /// </summary>
-    public int TimeoutSeconds { get; set; } = 30;
-}";
+        // Create the ServiceCollectionExtensions class
+        var serviceCollectionExtensionsClass = ClassDeclaration("ServiceCollectionExtensions")
+            .WithModifiers(
+                TokenList(
+                    Token(SyntaxKind.PublicKeyword),
+                    Token(SyntaxKind.StaticKeyword)
+                )
+            )
+            .WithMembers(
+                List<MemberDeclarationSyntax>(
+                    new[] {
+                        addSoapClientMethod,
+                        addSoapClientWithPollyMethod
+                    }
+                )
+            )
+            .WithLeadingTrivia(classComment);
+
+        // Create the compilation unit
+        var compilationUnit = CompilationUnit()
+            .AddUsings(
+                UsingDirective(ParseName("Microsoft.Extensions.DependencyInjection")),
+                UsingDirective(ParseName("Microsoft.Extensions.Http")),
+                UsingDirective(ParseName("Polly")),
+                UsingDirective(ParseName("Polly.Extensions.Http")),
+                UsingDirective(ParseName("System")),
+                UsingDirective(ParseName("System.Net.Http"))
+            )
+            .AddMembers(
+                NamespaceDeclaration(
+                    ParseName($"{outputNamespace}.Extensions")
+                )
+                .WithUsings(
+                    SingletonList(
+                        UsingDirective(
+                            ParseName($"{outputNamespace}.Client")
+                        )
+                    )
+                )
+                .AddMembers(serviceCollectionExtensionsClass)
+            );
+
+        // Format the code
+        var code = compilationUnit
+            .NormalizeWhitespace()
+            .ToFullString();
 
         // Write the file
-        File.WriteAllText(Path.Combine(outputDirectory, "Extensions", "ServiceCollectionExtensions.cs"), content);
+        File.WriteAllText(Path.Combine(outputDirectory, "Extensions", "ServiceCollectionExtensions.cs"), code);
     }
 
     private void GenerateClientOptions(string outputNamespace, string outputDirectory)
     {
-        // Create the client options class
-        var code = $@"namespace {outputNamespace}.Client;
+        // Create XML documentation comments
+        var soapClientOptionsComment = SyntaxFactory.TriviaList(
+            SyntaxFactory.Comment("/// <summary>"),
+            SyntaxFactory.Comment("/// Options for configuring a SOAP client."),
+            SyntaxFactory.Comment("/// </summary>")
+        );
 
-/// <summary>
-/// Options for configuring a SOAP client.
-/// </summary>
-public class SoapClientOptions
-{{
-    /// <summary>
-    /// Gets or sets the SOAP service endpoint URL.
-    /// </summary>
-    public string Endpoint {{ get; set; }} = string.Empty;
-}}
+        var endpointPropertyComment = SyntaxFactory.TriviaList(
+            SyntaxFactory.Comment("/// <summary>"),
+            SyntaxFactory.Comment("/// Gets or sets the SOAP service endpoint URL."),
+            SyntaxFactory.Comment("/// </summary>")
+        );
 
-/// <summary>
-/// Options for configuring Polly policies.
-/// </summary>
-public class PollyPolicyOptions
-{{
-    /// <summary>
-    /// Gets or sets the number of retry attempts.
-    /// </summary>
-    public int RetryCount {{ get; set; }} = 3;
+        var pollyPolicyOptionsComment = SyntaxFactory.TriviaList(
+            SyntaxFactory.Comment("/// <summary>"),
+            SyntaxFactory.Comment("/// Options for configuring Polly policies."),
+            SyntaxFactory.Comment("/// </summary>")
+        );
 
-    /// <summary>
-    /// Gets or sets the timeout in seconds.
-    /// </summary>
-    public int TimeoutSeconds {{ get; set; }} = 30;
-}}";
+        var retryCountPropertyComment = SyntaxFactory.TriviaList(
+            SyntaxFactory.Comment("/// <summary>"),
+            SyntaxFactory.Comment("/// Gets or sets the number of retry attempts."),
+            SyntaxFactory.Comment("/// </summary>")
+        );
+
+        var timeoutSecondsPropertyComment = SyntaxFactory.TriviaList(
+            SyntaxFactory.Comment("/// <summary>"),
+            SyntaxFactory.Comment("/// Gets or sets the timeout in seconds."),
+            SyntaxFactory.Comment("/// </summary>")
+        );
+
+        // Create the endpoint property
+        var endpointProperty = PropertyDeclaration(
+                ParseTypeName("string"),
+                Identifier("Endpoint")
+            )
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+            .WithAccessorList(
+                AccessorList(
+                    List(new[] {
+                        AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
+                        AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                    })
+                )
+            )
+            .WithInitializer(
+                EqualsValueClause(
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        ParseTypeName("string"),
+                        IdentifierName("Empty")
+                    )
+                )
+            )
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            .WithLeadingTrivia(endpointPropertyComment);
+
+        // Create the RetryCount property
+        var retryCountProperty = PropertyDeclaration(
+                ParseTypeName("int"),
+                Identifier("RetryCount")
+            )
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+            .WithAccessorList(
+                AccessorList(
+                    List(new[] {
+                        AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
+                        AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                    })
+                )
+            )
+            .WithInitializer(
+                EqualsValueClause(
+                    LiteralExpression(
+                        SyntaxKind.NumericLiteralExpression,
+                        Literal(3)
+                    )
+                )
+            )
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            .WithLeadingTrivia(retryCountPropertyComment);
+
+        // Create the TimeoutSeconds property
+        var timeoutSecondsProperty = PropertyDeclaration(
+                ParseTypeName("int"),
+                Identifier("TimeoutSeconds")
+            )
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+            .WithAccessorList(
+                AccessorList(
+                    List(new[] {
+                        AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
+                        AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                    })
+                )
+            )
+            .WithInitializer(
+                EqualsValueClause(
+                    LiteralExpression(
+                        SyntaxKind.NumericLiteralExpression,
+                        Literal(30)
+                    )
+                )
+            )
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+            .WithLeadingTrivia(timeoutSecondsPropertyComment);
+
+        // Create the SoapClientOptions class
+        var soapClientOptionsClass = ClassDeclaration("SoapClientOptions")
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+            .WithLeadingTrivia(soapClientOptionsComment)
+            .WithMembers(List<MemberDeclarationSyntax>(new[] { endpointProperty }));
+
+        // Create the PollyPolicyOptions class
+        var pollyPolicyOptionsClass = ClassDeclaration("PollyPolicyOptions")
+            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+            .WithLeadingTrivia(pollyPolicyOptionsComment)
+            .WithMembers(List<MemberDeclarationSyntax>(new[] { retryCountProperty, timeoutSecondsProperty }));
+
+        // Create the compilation unit
+        var compilationUnit = CompilationUnit()
+            .AddUsings(UsingDirective(ParseName("System")))
+            .AddMembers(
+                NamespaceDeclaration(ParseName($"{outputNamespace}.Client"))
+                    .AddMembers(soapClientOptionsClass, pollyPolicyOptionsClass)
+            );
+
+        // Format the code
+        var code = compilationUnit
+            .NormalizeWhitespace()
+            .ToFullString();
 
         // Write the file
         File.WriteAllText(Path.Combine(outputDirectory, "Client", "SoapClientOptions.cs"), code);
