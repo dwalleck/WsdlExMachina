@@ -90,4 +90,92 @@ public class EndToEndTests
             File.Delete(outputPath);
         }
     }
+
+    [Fact]
+    public async Task EndToEnd_CliWorkflow_MultiFile_Success()
+    {
+        // Arrange
+        var wsdlFilePath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+        var outputNamespace = "WsdlExMachina.Generated";
+        var outputDir = Path.Combine(Path.GetTempPath(), "WsdlExMachina_Test_" + Guid.NewGuid());
+        Directory.CreateDirectory(outputDir);
+
+        try
+        {
+            // Act - Generate client using CLI with multi-file option
+            var generateResult = await WsdlExMachina.Cli.Program.Main(new string[] {
+                "generate",
+                "--file", wsdlFilePath,
+                "--namespace", outputNamespace,
+                "--multi-file", "true",
+                "--output-dir", outputDir,
+                "--http-client", "true"
+            });
+
+            // Assert - Verify generate command
+            Assert.Equal(0, generateResult);
+
+            // Verify directory structure
+            Assert.True(Directory.Exists(Path.Combine(outputDir, "Models")));
+            Assert.True(Directory.Exists(Path.Combine(outputDir, "Client")));
+            Assert.True(Directory.Exists(Path.Combine(outputDir, "Interfaces")));
+            Assert.True(Directory.Exists(Path.Combine(outputDir, "Extensions")));
+
+            // Verify specific files
+            Assert.True(File.Exists(Path.Combine(outputDir, "Client", "SoapClientBase.cs")));
+            Assert.True(File.Exists(Path.Combine(outputDir, "Client", "SoapClientOptions.cs")));
+            Assert.True(File.Exists(Path.Combine(outputDir, "Extensions", "ServiceCollectionExtensions.cs")));
+            Assert.True(File.Exists(Path.Combine(outputDir, "Client", "ACHTransactionClient.cs")));
+            Assert.True(File.Exists(Path.Combine(outputDir, "Interfaces", "IACHTransactionSoap.cs")));
+
+            // Verify client file contains HttpClient code
+            var clientCode = File.ReadAllText(Path.Combine(outputDir, "Client", "ACHTransactionClient.cs"));
+            Assert.Contains("SendSoapRequestAsync", clientCode);
+            Assert.DoesNotContain("System.ServiceModel", clientCode);
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(outputDir))
+            {
+                Directory.Delete(outputDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task EndToEnd_CliWorkflow_HttpClient_Success()
+    {
+        // Arrange
+        var wsdlFilePath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+        var outputNamespace = "WsdlExMachina.Generated";
+        var outputPath = Path.Combine(Path.GetTempPath(), "ACHTransactionClient_HttpClient.cs");
+
+        // Act - Generate client using CLI with HttpClient option
+        var generateResult = await WsdlExMachina.Cli.Program.Main(new string[] {
+            "generate",
+            "--file", wsdlFilePath,
+            "--namespace", outputNamespace,
+            "--output", outputPath,
+            "--http-client", "true"
+        });
+
+        // Assert - Verify generate command
+        Assert.Equal(0, generateResult);
+        Assert.True(File.Exists(outputPath));
+
+        // Verify generated code
+        var code = File.ReadAllText(outputPath);
+        Assert.NotNull(code);
+        Assert.NotEmpty(code);
+        Assert.Contains("namespace WsdlExMachina.Generated", code);
+        Assert.Contains("public class ACHTransactionClient", code);
+        Assert.Contains("public interface IACHTransactionSoap", code);
+
+        // Cleanup
+        if (File.Exists(outputPath))
+        {
+            File.Delete(outputPath);
+        }
+    }
 }

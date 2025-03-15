@@ -107,7 +107,7 @@ public class SoapClientGenerator
         return code;
     }
 
-    private MemberDeclarationSyntax GenerateDataContract(WsdlComplexType complexType)
+    public MemberDeclarationSyntax GenerateDataContract(WsdlComplexType complexType)
     {
         // Create the class declaration
         var classDeclaration = ClassDeclaration(complexType.Name)
@@ -224,7 +224,7 @@ public class SoapClientGenerator
         return classDeclaration;
     }
 
-    private MemberDeclarationSyntax GenerateEnum(WsdlSimpleType simpleType)
+    public MemberDeclarationSyntax GenerateEnum(WsdlSimpleType simpleType)
     {
         // Create the enum declaration
         var enumDeclaration = EnumDeclaration(simpleType.Name)
@@ -296,7 +296,7 @@ public class SoapClientGenerator
         return enumDeclaration;
     }
 
-    private MemberDeclarationSyntax GenerateServiceContract(WsdlPortType portType, WsdlDefinition wsdlDefinition)
+    public MemberDeclarationSyntax GenerateServiceContract(WsdlPortType portType, WsdlDefinition wsdlDefinition)
     {
         // Create the interface declaration
         var interfaceDeclaration = InterfaceDeclaration($"I{portType.Name}")
@@ -442,7 +442,7 @@ public class SoapClientGenerator
         return interfaceDeclaration;
     }
 
-    private MemberDeclarationSyntax GenerateClientClass(WsdlService service, WsdlDefinition wsdlDefinition)
+    public MemberDeclarationSyntax GenerateClientClass(WsdlService service, WsdlDefinition wsdlDefinition)
     {
         // Find the port type for this service
         var port = service.Ports.FirstOrDefault();
@@ -679,7 +679,7 @@ public class SoapClientGenerator
         return classDeclaration;
     }
 
-    private string MapXsdTypeToClrType(string xsdType)
+    public string MapXsdTypeToClrType(string xsdType)
     {
         return xsdType switch
         {
@@ -733,7 +733,7 @@ public class SoapClientGenerator
         };
     }
 
-    private string ToPascalCase(string name)
+    public string ToPascalCase(string name)
     {
         if (string.IsNullOrEmpty(name))
         {
@@ -759,7 +759,7 @@ public class SoapClientGenerator
         return sb.ToString();
     }
 
-    private string ToCamelCase(string name)
+    public string ToCamelCase(string name)
     {
         var pascal = ToPascalCase(name);
         if (string.IsNullOrEmpty(pascal))

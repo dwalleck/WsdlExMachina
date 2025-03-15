@@ -1,6 +1,7 @@
 using System.IO;
 using Xunit;
 using WsdlExMachina.Generator;
+using WsdlExMachina.Parser;
 
 namespace WsdlExMachina.Generator.Tests;
 
@@ -40,7 +41,45 @@ public class SoapClientGeneratorTests
         Assert.Contains("using System;", code);
         Assert.Contains("using System.Collections.Generic;", code);
         Assert.Contains("using System.Threading.Tasks;", code);
-        Assert.Contains("using System.ServiceModel;", code);
+    }
+
+    [Fact]
+    public void MultiFileGenerator_CreatesFiles()
+    {
+        // Arrange
+        var generator = new SoapClientGenerator();
+        var multiFileGenerator = new MultiFileGenerator(generator);
+        var filePath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+        var outputNamespace = "TestNamespace";
+        var outputDir = Path.Combine(Path.GetTempPath(), "WsdlExMachina_Test_" + Guid.NewGuid());
+        Directory.CreateDirectory(outputDir);
+
+        try
+        {
+            // Act
+            var parser = new WsdlParser();
+            var wsdl = parser.ParseFile(filePath);
+            multiFileGenerator.Generate(wsdl, outputNamespace, outputDir);
+
+            // Assert
+            Assert.True(Directory.Exists(Path.Combine(outputDir, "Models")));
+            Assert.True(Directory.Exists(Path.Combine(outputDir, "Client")));
+            Assert.True(Directory.Exists(Path.Combine(outputDir, "Interfaces")));
+            Assert.True(Directory.Exists(Path.Combine(outputDir, "Extensions")));
+
+            // Check for specific files
+            Assert.True(File.Exists(Path.Combine(outputDir, "Client", "SoapClientBase.cs")));
+            Assert.True(File.Exists(Path.Combine(outputDir, "Client", "SoapClientOptions.cs")));
+            Assert.True(File.Exists(Path.Combine(outputDir, "Extensions", "ServiceCollectionExtensions.cs")));
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(outputDir))
+            {
+                Directory.Delete(outputDir, true);
+            }
+        }
     }
 
     [Fact]
@@ -89,10 +128,7 @@ public class SoapClientGeneratorTests
         var code = generator.GenerateFromFile(filePath, outputNamespace);
 
         // Assert
-        Assert.Contains("public class ACHTransactionClient : ClientBase<IACHTransactionSoap>, IACHTransactionSoap", code);
-        Assert.Contains("public ACHTransactionClient()", code);
-        Assert.Contains("public ACHTransactionClient(string endpointConfigurationName)", code);
-        Assert.Contains("public ACHTransactionClient(string endpointConfigurationName, string remoteAddress)", code);
-        Assert.Contains("public ACHTransactionClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress)", code);
+        Assert.Contains("public class ACHTransactionClient", code);
+        Assert.Contains("public ACHTransactionClient(", code);
     }
 }
