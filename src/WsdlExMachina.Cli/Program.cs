@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using Spectre.Console;
+﻿﻿﻿﻿using Spectre.Console;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using WsdlExMachina.Generator;
@@ -62,12 +62,20 @@ public class Program
         {
             IsRequired = false
         };
+        var generateCsprojOption = new Option<bool>(
+            name: "--generate-csproj",
+            description: "Generate a .csproj file for the client code",
+            getDefaultValue: () => true)
+        {
+            IsRequired = false
+        };
         generateCommand.AddOption(generateFileOption);
         generateCommand.AddOption(namespaceOption);
         generateCommand.AddOption(outputOption);
         generateCommand.AddOption(multiFileOption);
         generateCommand.AddOption(outputDirOption);
         generateCommand.AddOption(httpClientOption);
+        generateCommand.AddOption(generateCsprojOption);
 
         // Add validation rule for --multi-file and --output-dir
         generateCommand.AddValidator(result =>
@@ -79,9 +87,9 @@ public class Program
             }
         });
 
-        generateCommand.SetHandler((file, ns, output, multiFile, outputDir, httpClient) =>
-            GenerateClient(file, ns, output, multiFile, outputDir, httpClient),
-            generateFileOption, namespaceOption, outputOption, multiFileOption, outputDirOption, httpClientOption);
+        generateCommand.SetHandler((file, ns, output, multiFile, outputDir, httpClient, generateCsproj) =>
+            GenerateClient(file, ns, output, multiFile, outputDir, httpClient, generateCsproj),
+            generateFileOption, namespaceOption, outputOption, multiFileOption, outputDirOption, httpClientOption, generateCsprojOption);
         rootCommand.AddCommand(generateCommand);
 
         return await rootCommand.InvokeAsync(args);
@@ -177,7 +185,7 @@ public class Program
         }
     }
 
-    private static int GenerateClient(FileInfo file, string outputNamespace, FileInfo? output, bool multiFile, DirectoryInfo? outputDir, bool useHttpClient)
+    private static int GenerateClient(FileInfo file, string outputNamespace, FileInfo? output, bool multiFile, DirectoryInfo? outputDir, bool useHttpClient, bool generateCsproj)
     {
         try
         {
@@ -210,6 +218,13 @@ public class Program
                 // Generate code across multiple files
                 var generator = new SoapClientGenerator();
                 var multiFileGenerator = new MultiFileGenerator(generator);
+
+                // Create the output directory if it doesn't exist
+                if (!outputDir.Exists)
+                {
+                    outputDir.Create();
+                }
+
                 multiFileGenerator.Generate(wsdl, outputNamespace, outputDir.FullName);
 
                 AnsiConsole.MarkupLine($"[bold green]SOAP client generated successfully.[/]");

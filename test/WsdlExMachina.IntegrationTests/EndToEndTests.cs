@@ -128,6 +128,16 @@ public class EndToEndTests
             Assert.True(File.Exists(Path.Combine(outputDir, "Client", "ACHTransactionClient.cs")));
             Assert.True(File.Exists(Path.Combine(outputDir, "Interfaces", "IACHTransactionSoap.cs")));
 
+            // Verify csproj file was generated
+            var dirName = new DirectoryInfo(outputDir).Name;
+            Assert.True(File.Exists(Path.Combine(outputDir, $"{dirName}.csproj")));
+
+            // Verify csproj file content
+            var csprojContent = File.ReadAllText(Path.Combine(outputDir, $"{dirName}.csproj"));
+            Assert.Contains("<TargetFramework>net9.0</TargetFramework>", csprojContent);
+            Assert.Contains($"<RootNamespace>{outputNamespace}</RootNamespace>", csprojContent);
+            Assert.Contains("<PackageReference Include=\"Microsoft.Extensions.Http\"", csprojContent);
+
             // Verify client file contains HttpClient code
             var clientCode = File.ReadAllText(Path.Combine(outputDir, "Client", "ACHTransactionClient.cs"));
             Assert.Contains("SendSoapRequestAsync", clientCode);
@@ -176,6 +186,68 @@ public class EndToEndTests
         if (File.Exists(outputPath))
         {
             File.Delete(outputPath);
+        }
+    }
+
+    [Fact]
+    public async Task EndToEnd_GenerateClientWithCsproj_Success()
+    {
+        // Arrange
+        var wsdlFilePath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+        var outputNamespace = "WsdlExMachina.Generated";
+        var outputDir = Path.Combine(Path.GetTempPath(), "WsdlExMachina_Test_Csproj_" + Guid.NewGuid());
+        Directory.CreateDirectory(outputDir);
+
+        try
+        {
+            // Act - Generate client using CLI with multi-file option and explicit csproj generation
+            var generateResult = await WsdlExMachina.Cli.Program.Main(new string[] {
+                "generate",
+                "--file", wsdlFilePath,
+                "--namespace", outputNamespace,
+                "--multi-file", "true",
+                "--output-dir", outputDir,
+                "--http-client", "true",
+                "--generate-csproj", "true"
+            });
+
+            // Assert - Verify generate command
+            Assert.Equal(0, generateResult);
+
+            // Verify csproj file was generated
+            var dirName = new DirectoryInfo(outputDir).Name;
+            var csprojPath = Path.Combine(outputDir, $"{dirName}.csproj");
+            Assert.True(File.Exists(csprojPath));
+
+            // Verify csproj file content
+            var csprojContent = File.ReadAllText(csprojPath);
+            Assert.Contains("<TargetFramework>net9.0</TargetFramework>", csprojContent);
+            Assert.Contains($"<RootNamespace>{outputNamespace}</RootNamespace>", csprojContent);
+
+            // Verify the csproj can be built
+            var testClientDir = Path.Combine("..", "..", "..", "..", "..", "test-client");
+            Directory.CreateDirectory(testClientDir);
+
+            // Copy all generated files to test-client directory
+            foreach (var file in Directory.GetFiles(outputDir, "*.*", SearchOption.AllDirectories))
+            {
+                var relativePath = Path.GetRelativePath(outputDir, file);
+                var destPath = Path.Combine(testClientDir, relativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(destPath));
+                File.Copy(file, destPath, true);
+            }
+
+            // Verify the copied files exist
+            Assert.True(File.Exists(Path.Combine(testClientDir, $"{dirName}.csproj")));
+            Assert.True(File.Exists(Path.Combine(testClientDir, "Client", "ACHTransactionClient.cs")));
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(outputDir))
+            {
+                Directory.Delete(outputDir, true);
+            }
         }
     }
 }

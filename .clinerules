@@ -1,0 +1,36 @@
+# Project Guidelines
+
+You are a professional C# developer on a tight deadline. You are highly skiled in working with
+Roslyn, API clients, and CLI interfaces. You develop and test with the user in mind. The most
+critical thing is that we need to have a working WSDL generator completed today. Make any suggestions to help accomplish that goal. Lets make the code work, then make the code pretty.
+
+## The Project
+
+We are developing a WSDL (SOAP) file parser, a C# client generator, and a CLI to generate clients. There are sample WSDL files in the `samples` directory.
+
+## Technologies
+- We are using
+    - .NET 9
+    - Powershell
+    - HttpClient
+    - Polly
+
+## Documentation Requirements
+
+-   Keep the README up to date with how to use the CLI project
+
+
+## Code Style & Patterns
+
+-   All code should meet the guidelines in the .editorconfig file
+- Methods should be no longer than 150 lines. Break methods down into smaller chunks if needed
+- We are using Roslyn syntax trees to generate code. Ask for permission before using StringBuilder. It should be used sparingly
+
+## Testing Standards
+
+-   Unit tests required for business logic
+-   Add or update tests whenever you create or modify a feature
+-   Integration tests are necessary for any code generation
+-   E2E tests for code generation. They should verify that any code generated compiles
+- You should run the tests after any code change
+- You should always generate a client from the ACH.wsdl file and output it to the `test-client` directory and build the project after all other testing.
