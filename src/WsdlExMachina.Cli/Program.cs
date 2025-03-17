@@ -1,4 +1,4 @@
-﻿﻿﻿﻿using Spectre.Console;
+﻿﻿using Spectre.Console;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using WsdlExMachina.Generator;
