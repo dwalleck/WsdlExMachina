@@ -1,7 +1,7 @@
-using System.IO;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.IO;
 using WsdlExMachina.Parser.Models;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -15,6 +15,12 @@ public class ServiceCollectionExtensionsGenerator : ICodeGenerator
     /// <summary>
     /// Generates extension methods for registering SOAP clients with dependency injection.
     /// </summary>
+    /// <param name="wsdlDefinition">The WSDL definition.</param>
+    /// <param name="outputNamespace">The namespace to use for the generated code.</param>
+    /// <param name="outputDirectory">The directory where the files will be created.</param>
+    /// <summary>
+    /// Generates the service collection extensions for the given WSDL definition.
+        // Create the ServiceCollectionExtensions class
     /// <param name="wsdlDefinition">The WSDL definition.</param>
     /// <param name="outputNamespace">The namespace to use for the generated code.</param>
     /// <param name="outputDirectory">The directory where the files will be created.</param>
@@ -299,7 +305,7 @@ public class ServiceCollectionExtensionsGenerator : ICodeGenerator
                         )
                     )
                 ),
-                // Add the AddSoapClientWithPolly method
+                // Add the AddSoapClientWithPolly method to register SOAP clients with Polly policies
                 MethodDeclaration(
                     IdentifierName("IServiceCollection"),
                     Identifier("AddSoapClientWithPolly")
@@ -664,7 +670,7 @@ public class ServiceCollectionExtensionsGenerator : ICodeGenerator
                         )
                     )
                 ),
-                // Add the PollyPolicyOptions class
+                // Define the PollyPolicyOptions class to configure Polly policies
                 ClassDeclaration("PollyPolicyOptions")
                     .AddModifiers(Token(SyntaxKind.PublicKeyword))
                     .AddMembers(
@@ -715,6 +721,9 @@ public class ServiceCollectionExtensionsGenerator : ICodeGenerator
         var code = compilationUnit
             .NormalizeWhitespace()
             .ToFullString();
+
+        // Ensure the directory exists
+        Directory.CreateDirectory(Path.Combine(outputDirectory, "Extensions"));
 
         // Write the file
         File.WriteAllText(Path.Combine(outputDirectory, "Extensions", "ServiceCollectionExtensions.cs"), code);

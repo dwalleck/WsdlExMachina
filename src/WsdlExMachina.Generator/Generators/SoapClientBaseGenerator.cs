@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using WsdlExMachina.Parser.Models;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using CommunityToolkit.Diagnostics;
 
 namespace WsdlExMachina.Generator.Generators;
 
@@ -20,6 +21,11 @@ public class SoapClientBaseGenerator : ICodeGenerator
     /// <param name="outputDirectory">The directory where the files will be created.</param>
     public void Generate(WsdlDefinition wsdlDefinition, string outputNamespace, string outputDirectory)
     {
+         // Validate parameters
+        Guard.IsNotNull(wsdlDefinition, nameof(wsdlDefinition));
+        Guard.IsNotNullOrWhiteSpace(outputNamespace, nameof(outputNamespace));
+        Guard.IsNotNullOrWhiteSpace(outputDirectory, nameof(outputDirectory));
+
         // Create the SoapClientBase class
         var classDeclaration = ClassDeclaration("SoapClientBase")
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.AbstractKeyword))
