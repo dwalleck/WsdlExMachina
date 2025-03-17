@@ -3,11 +3,10 @@
 ##
 ## Get latest from `dotnet new gitignore`
 test-output*
-client*
 test-client*
 # dotenv files
 .env
-
+/client
 # User-specific files
 *.rsuser
 *.suo
