@@ -62,6 +62,74 @@ public class InterfacesGenerator : ICodeGenerator
                     );
                 }
 
+                // Find the binding operation to check for headers
+                var bindingOperation = wsdlDefinition.Bindings
+                    .SelectMany(b => b.Operations)
+                    .FirstOrDefault(bo => bo.Name == operation.Name);
+
+                // Add header parameters if needed
+                if (bindingOperation?.Input?.Headers.Count > 0)
+                {
+                    bool hasSWBCAuthHeader = false;
+
+                    // Check if any of the headers is a SWBCAuthHeader
+                    foreach (var header in bindingOperation.Input.Headers)
+                    {
+                        var headerMessage = wsdlDefinition.Messages.FirstOrDefault(m => m.Name == header.Message);
+                        if (headerMessage != null && headerMessage.Parts.Count > 0)
+                        {
+                            // Check if this is a SWBCAuthHeader
+                            foreach (var part in headerMessage.Parts)
+                            {
+                                if (!string.IsNullOrEmpty(part.Element))
+                                {
+                                    var element = wsdlDefinition.Types.Elements.FirstOrDefault(e => e.Name == part.Element);
+                                    if (element != null && element.Name.Contains("SWBCAuthHeader"))
+                                    {
+                                        hasSWBCAuthHeader = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (hasSWBCAuthHeader)
+                                break;
+                        }
+                    }
+
+                    // If we have a SWBCAuthHeader, use the common SoapAuthHeader class
+                    if (hasSWBCAuthHeader)
+                    {
+                        var headerParam = Parameter(
+                            Identifier("authHeader")
+                        )
+                        .WithType(
+                            ParseTypeName("SoapAuthHeader")
+                        );
+
+                        parameters.Add(headerParam);
+                    }
+                    else
+                    {
+                        // For other header types, use the specific header classes
+                        foreach (var header in bindingOperation.Input.Headers)
+                        {
+                            var headerMessage = wsdlDefinition.Messages.FirstOrDefault(m => m.Name == header.Message);
+                            if (headerMessage != null)
+                            {
+                                var headerParam = Parameter(
+                                    Identifier(_toCamelCase(headerMessage.Name))
+                                )
+                                .WithType(
+                                    ParseTypeName(headerMessage.Name)
+                                );
+
+                                parameters.Add(headerParam);
+                            }
+                        }
+                    }
+                }
+
                 // Add cancellation token parameter
                 parameters.Add(
                     Parameter(
@@ -101,7 +169,8 @@ public class InterfacesGenerator : ICodeGenerator
                     UsingDirective(ParseName("System.Threading")),
                     UsingDirective(ParseName("System.Threading.Tasks")),
                     UsingDirective(ParseName($"{outputNamespace}.Models.Requests")),
-                    UsingDirective(ParseName($"{outputNamespace}.Models.Responses"))
+                    UsingDirective(ParseName($"{outputNamespace}.Models.Responses")),
+                    UsingDirective(ParseName($"{outputNamespace}.Models.Headers"))
                 )
                 .AddMembers(
                     NamespaceDeclaration(ParseName($"{outputNamespace}.Interfaces"))
@@ -116,5 +185,16 @@ public class InterfacesGenerator : ICodeGenerator
             // Write the file
             File.WriteAllText(Path.Combine(outputDirectory, "Interfaces", $"I{portType.Name}.cs"), code);
         }
+    }
+
+    // Helper method to convert a string to camelCase
+    private string _toCamelCase(string input)
+    {
+        if (string.IsNullOrEmpty(input) || char.IsLower(input[0]))
+        {
+            return input;
+        }
+
+        return char.ToLowerInvariant(input[0]) + input.Substring(1);
     }
 }

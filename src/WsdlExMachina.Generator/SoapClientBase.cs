@@ -80,14 +80,37 @@ public abstract class SoapClientBase
     /// <typeparam name="TResponse">The response type.</typeparam>
     /// <param name="action">The SOAP action.</param>
     /// <param name="request">The request object.</param>
+    /// <param name="header">Optional SOAP header to include in the request.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The deserialized response.</returns>
     protected async Task<TResponse> SendSoapRequestAsync<TRequest, TResponse>(
         string action,
         TRequest request,
+        object? header = null,
         CancellationToken cancellationToken = default)
     {
-        var soapEnvelope = CreateSoapEnvelope(request);
+        // Convert single header to array if provided
+        object[]? headers = header != null ? new object[] { header } : null;
+        return await SendSoapRequestWithHeadersAsync<TRequest, TResponse>(action, request, headers, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sends a SOAP request with multiple headers and returns the deserialized response.
+    /// </summary>
+    /// <typeparam name="TRequest">The request type.</typeparam>
+    /// <typeparam name="TResponse">The response type.</typeparam>
+    /// <param name="action">The SOAP action.</param>
+    /// <param name="request">The request object.</param>
+    /// <param name="headers">Optional SOAP headers to include in the request.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>The deserialized response.</returns>
+    protected async Task<TResponse> SendSoapRequestWithHeadersAsync<TRequest, TResponse>(
+        string action,
+        TRequest request,
+        object[]? headers = null,
+        CancellationToken cancellationToken = default)
+    {
+        var soapEnvelope = CreateSoapEnvelope(request, headers);
         var content = new StringContent(soapEnvelope, Encoding.UTF8, "text/xml");
         content.Headers.Add("SOAPAction", action);
 
@@ -105,13 +128,13 @@ public abstract class SoapClientBase
     /// </summary>
     /// <typeparam name="T">The request type.</typeparam>
     /// <param name="request">The request object.</param>
+    /// <param name="headers">Optional SOAP headers to include in the request.</param>
     /// <returns>The SOAP envelope XML string.</returns>
-    protected virtual string CreateSoapEnvelope<T>(T request)
+    protected virtual string CreateSoapEnvelope<T>(T request, object[] headers = null)
     {
         var namespaces = new XmlSerializerNamespaces();
         namespaces.Add("soap", "http://schemas.xmlsoap.org/soap/envelope/");
 
-        var serializer = new XmlSerializer(typeof(T));
         var settings = new XmlWriterSettings
         {
             Encoding = Encoding.UTF8,
@@ -122,12 +145,35 @@ public abstract class SoapClientBase
         var soapEnvelope = new StringBuilder();
         soapEnvelope.AppendLine(@"<?xml version=""1.0"" encoding=""utf-8""?>");
         soapEnvelope.AppendLine(@"<soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"">");
+
+        // Add SOAP headers if provided
+        if (headers != null && headers.Length > 0)
+        {
+            soapEnvelope.AppendLine(@"  <soap:Header>");
+            foreach (var header in headers)
+            {
+                if (header != null)
+                {
+                    var headerSerializer = new XmlSerializer(header.GetType());
+                    using (var stringWriter = new StringWriter())
+                    using (var xmlWriter = XmlWriter.Create(stringWriter, settings))
+                    {
+                        headerSerializer.Serialize(xmlWriter, header, namespaces);
+                        soapEnvelope.AppendLine(stringWriter.ToString());
+                    }
+                }
+            }
+            soapEnvelope.AppendLine(@"  </soap:Header>");
+        }
+
         soapEnvelope.AppendLine(@"  <soap:Body>");
 
+        // Serialize the request body
+        var bodySerializer = new XmlSerializer(typeof(T));
         using (var stringWriter = new StringWriter())
         using (var xmlWriter = XmlWriter.Create(stringWriter, settings))
         {
-            serializer.Serialize(xmlWriter, request, namespaces);
+            bodySerializer.Serialize(xmlWriter, request, namespaces);
             soapEnvelope.AppendLine(stringWriter.ToString());
         }
 

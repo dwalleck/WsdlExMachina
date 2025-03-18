@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -24,19 +25,15 @@ public class ClientsGenerator : ICodeGenerator
     /// <exception cref="IOException">Thrown when an I/O error occurs while writing the file.</exception>
     public void Generate(WsdlDefinition wsdlDefinition, string outputNamespace, string outputDirectory)
     {
-        // Create a dictionary for bindings for quick lookup
-        var bindingsDictionary = wsdlDefinition.Bindings.ToDictionary(b => b.Name);
-
-        foreach (var service in wsdlDefinition.Services)
-        {
         // Create dictionaries for bindings and port types for faster lookups
         var bindingsDictionary = wsdlDefinition.Bindings.ToDictionary(b => b.Name);
         var portTypesDictionary = wsdlDefinition.PortTypes.ToDictionary(pt => pt.Name);
 
         foreach (var service in wsdlDefinition.Services)
         {
-            // Find the port type for this service
-            if (!portsDictionary.TryGetValue(service.Name, out var port))
+            // Find the port for this service
+            var port = service.Ports.FirstOrDefault();
+            if (port == null)
             {
                 continue;
             }
@@ -48,8 +45,6 @@ public class ClientsGenerator : ICodeGenerator
 
             if (!portTypesDictionary.TryGetValue(binding.Type, out var portType))
             {
-                continue;
-            }
                 continue;
             }
 
@@ -92,6 +87,11 @@ public class ClientsGenerator : ICodeGenerator
                                     }
                                 )
                             )
+                        )
+                    )
+                    .WithBody(Block())
+            );
+
             // Add method implementations
             // Get unique operations to avoid duplicates
             var uniqueOperations = portType.Operations
@@ -99,11 +99,15 @@ public class ClientsGenerator : ICodeGenerator
                 .Select(g => g.First())
                 .ToList();
 
-            // Create a dictionary for binding operations to find the SOAP action quickly
-            var bindingOperationsDictionary = wsdlDefinition.Bindings
+            // Create a lookup for binding operations to find the SOAP action quickly
+            // Use a composite key of operation name and input name to handle overloaded operations
+            var bindingOperationsLookup = wsdlDefinition.Bindings
                 .SelectMany(b => b.Operations)
                 .Where(bo => !string.IsNullOrEmpty(bo.SoapAction))
-                .ToDictionary(bo => bo.Name, bo => bo.SoapAction);
+                .ToLookup(
+                    bo => new { OperationName = bo.Name, InputName = bo.Input?.Name ?? string.Empty },
+                    bo => new { SoapAction = bo.SoapAction, InputName = bo.Input?.Name ?? string.Empty }
+                );
 
             foreach (var operation in uniqueOperations)
             {
@@ -133,6 +137,77 @@ public class ClientsGenerator : ICodeGenerator
                     );
                 }
 
+                // Find the binding operation to check for headers
+                var bindingOperation = wsdlDefinition.Bindings
+                    .SelectMany(b => b.Operations)
+                    .FirstOrDefault(bo => bo.Name == operation.Name);
+
+                // Add header parameters if needed
+                var headerParameters = new List<ParameterSyntax>();
+                if (bindingOperation?.Input?.Headers.Count > 0)
+                {
+                    bool hasSWBCAuthHeader = false;
+
+                    // Check if any of the headers is a SWBCAuthHeader
+                    foreach (var header in bindingOperation.Input.Headers)
+                    {
+                        var headerMessage = wsdlDefinition.Messages.FirstOrDefault(m => m.Name == header.Message);
+                        if (headerMessage != null && headerMessage.Parts.Count > 0)
+                        {
+                            // Check if this is a SWBCAuthHeader
+                            foreach (var part in headerMessage.Parts)
+                            {
+                                if (!string.IsNullOrEmpty(part.Element))
+                                {
+                                    var element = wsdlDefinition.Types.Elements.FirstOrDefault(e => e.Name == part.Element);
+                                    if (element != null && element.Name.Contains("SWBCAuthHeader"))
+                                    {
+                                        hasSWBCAuthHeader = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (hasSWBCAuthHeader)
+                                break;
+                        }
+                    }
+
+                    // If we have a SWBCAuthHeader, use the common SoapAuthHeader class
+                    if (hasSWBCAuthHeader)
+                    {
+                        var headerParam = Parameter(
+                            Identifier("authHeader")
+                        )
+                        .WithType(
+                            ParseTypeName("SoapAuthHeader")
+                        );
+
+                        headerParameters.Add(headerParam);
+                        parameters.Add(headerParam);
+                    }
+                    else
+                    {
+                        // For other header types, use the specific header classes
+                        foreach (var header in bindingOperation.Input.Headers)
+                        {
+                            var headerMessage = wsdlDefinition.Messages.FirstOrDefault(m => m.Name == header.Message);
+                            if (headerMessage != null)
+                            {
+                                var headerParam = Parameter(
+                                    Identifier(_toCamelCase(headerMessage.Name))
+                                )
+                                .WithType(
+                                    ParseTypeName(headerMessage.Name)
+                                );
+
+                                headerParameters.Add(headerParam);
+                                parameters.Add(headerParam);
+                            }
+                        }
+                    }
+                }
+
                 // Add cancellation token parameter
                 parameters.Add(
                     Parameter(
@@ -154,19 +229,31 @@ public class ClientsGenerator : ICodeGenerator
                     returnType = $"Task<{operation.Name}Response>";
                 }
 
-                // Find the SOAP action from the dictionary
-                bindingOperationsDictionary.TryGetValue(operation.Name, out string soapAction);
+                // Find the SOAP action from the lookup
+                // Use the operation's input name if available
+                var operationKey = new { OperationName = operation.Name, InputName = operation.Input?.Name ?? string.Empty };
+                var operationInfos = bindingOperationsLookup[operationKey].ToList();
+                var operationInfo = operationInfos.FirstOrDefault();
+                string soapAction = operationInfo?.SoapAction ?? string.Empty;
+
+                // Use the operation name for the method name to ensure consistency with the interface
+                string methodName = operation.Name;
 
                 // Create the method implementation
                 var methodDeclaration = MethodDeclaration(
                     ParseTypeName(returnType),
-                    Identifier($"{operation.Name}Async")
+                    Identifier($"{methodName}Async")
                 )
                 .AddModifiers(Token(SyntaxKind.PublicKeyword))
                 .AddParameterListParameters(parameters.ToArray());
 
                 // Create the method body
-                StatementSyntax returnStatement;
+                List<StatementSyntax> statements = new List<StatementSyntax>();
+
+                // No need to create headers array anymore - we'll pass the header directly
+
+                // Create the return statement
+                ExpressionSyntax sendSoapRequestExpression;
                 if (outputMessage != null && outputMessage.Parts.Count > 0)
                 {
                     // Return the result of SendSoapRequestAsync
@@ -183,25 +270,34 @@ public class ClientsGenerator : ICodeGenerator
                             )
                         );
 
-                    returnStatement = ReturnStatement(
-                        InvocationExpression(genericName)
+                    var arguments = new List<ArgumentSyntax>
+                    {
+                        Argument(
+                            LiteralExpression(
+                                SyntaxKind.StringLiteralExpression,
+                                Literal(soapAction)
+                            )
+                        ),
+                        Argument(IdentifierName("request"))
+                    };
+
+                    if (headerParameters.Count > 0)
+                    {
+                        arguments.Add(Argument(IdentifierName(headerParameters[0].Identifier.Text)));
+                    }
+                    else
+                    {
+                        arguments.Add(Argument(LiteralExpression(SyntaxKind.NullLiteralExpression)));
+                    }
+
+                    arguments.Add(Argument(IdentifierName("cancellationToken")));
+
+                    sendSoapRequestExpression = InvocationExpression(genericName)
                         .WithArgumentList(
                             ArgumentList(
-                                SeparatedList(
-                                    new[] {
-                                        Argument(
-                                            LiteralExpression(
-                                                SyntaxKind.StringLiteralExpression,
-                                                Literal(soapAction)
-                                            )
-                                        ),
-                                        Argument(IdentifierName("request")),
-                                        Argument(IdentifierName("cancellationToken"))
-                                    }
-                                )
+                                SeparatedList(arguments)
                             )
-                        )
-                    );
+                        );
                 }
                 else
                 {
@@ -219,36 +315,40 @@ public class ClientsGenerator : ICodeGenerator
                             )
                         );
 
-                    returnStatement = ReturnStatement(
-                        InvocationExpression(genericName)
+                    var arguments = new List<ArgumentSyntax>
+                    {
+                        Argument(
+                            LiteralExpression(
+                                SyntaxKind.StringLiteralExpression,
+                                Literal(soapAction)
+                            )
+                        ),
+                        Argument(IdentifierName("request"))
+                    };
+
+                    if (headerParameters.Count > 0)
+                    {
+                        arguments.Add(Argument(IdentifierName(headerParameters[0].Identifier.Text)));
+                    }
+                    else
+                    {
+                        arguments.Add(Argument(LiteralExpression(SyntaxKind.NullLiteralExpression)));
+                    }
+
+                    arguments.Add(Argument(IdentifierName("cancellationToken")));
+
+                    sendSoapRequestExpression = InvocationExpression(genericName)
                         .WithArgumentList(
                             ArgumentList(
-                                SeparatedList(
-                                    new[] {
-                                        Argument(
-                                            LiteralExpression(
-                                                SyntaxKind.StringLiteralExpression,
-                                                Literal(soapAction)
-                                            )
-                                        ),
-                                        Argument(IdentifierName("request")),
-                                        Argument(IdentifierName("cancellationToken"))
-                                    }
-                                )
+                                SeparatedList(arguments)
                             )
-                        )
-                    );
+                        );
                 }
 
-                methodDeclaration = methodDeclaration.WithBody(
-                    Block(
-                        returnStatement
-                    )
-                );
+                statements.Add(ReturnStatement(sendSoapRequestExpression));
 
-                classDeclaration = classDeclaration.AddMembers(methodDeclaration);
-            }
-                    )
+                methodDeclaration = methodDeclaration.WithBody(
+                    Block(statements)
                 );
 
                 classDeclaration = classDeclaration.AddMembers(methodDeclaration);
@@ -263,7 +363,8 @@ public class ClientsGenerator : ICodeGenerator
                     UsingDirective(ParseName("System.Threading.Tasks")),
                     UsingDirective(ParseName($"{outputNamespace}.Interfaces")),
                     UsingDirective(ParseName($"{outputNamespace}.Models.Requests")),
-                    UsingDirective(ParseName($"{outputNamespace}.Models.Responses"))
+                    UsingDirective(ParseName($"{outputNamespace}.Models.Responses")),
+                    UsingDirective(ParseName($"{outputNamespace}.Models.Headers"))
                 )
                 .AddMembers(
                     NamespaceDeclaration(ParseName($"{outputNamespace}.Client"))
@@ -273,7 +374,7 @@ public class ClientsGenerator : ICodeGenerator
             // Format the code
             var code = compilationUnit
                 .NormalizeWhitespace()
-            File.WriteAllText(Path.Combine(outputDirectory, "Client", service.Name + "Client.cs"), code);
+                .ToFullString();
 
             // Ensure the directory exists
             var clientDirectory = Path.Combine(outputDirectory, "Client");
@@ -285,5 +386,16 @@ public class ClientsGenerator : ICodeGenerator
             // Write the file
             File.WriteAllText(Path.Combine(clientDirectory, $"{service.Name}Client.cs"), code);
         }
+    }
+
+    // Helper method to convert a string to camelCase
+    private string _toCamelCase(string input)
+    {
+        if (string.IsNullOrEmpty(input) || char.IsLower(input[0]))
+        {
+            return input;
+        }
+
+        return char.ToLowerInvariant(input[0]) + input.Substring(1);
     }
 }

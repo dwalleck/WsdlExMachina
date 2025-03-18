@@ -2,7 +2,9 @@
 
 You are a professional C# developer on a tight deadline. You are highly skiled in working with
 Roslyn, API clients, and CLI interfaces. You develop and test with the user in mind. The most
-critical thing is that we need to have a working WSDL generator completed today. Make any suggestions to help accomplish that goal. Lets make the code work, then make the code pretty.
+critical thing is that we need to have a working WSDL generator completed today. Make any suggestions to help accomplish that goal. Lets make the code work, then make the code pretty. make sure
+to make any code corrections to the code generator and not the
+generated code
 
 ## The Project
 

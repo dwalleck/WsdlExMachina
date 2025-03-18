@@ -511,14 +511,39 @@ public class ServiceCollectionExtensionsGenerator : ICodeGenerator
                                                                         SingletonSeparatedList(
                                                                             Argument(
                                                                                 InvocationExpression(
-                                                                                    MemberAccessExpression(
-                                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                                    GenericName(
+                                                                                        Identifier("TimeoutAsync")
+                                                                                    )
+                                                                                    .WithTypeArgumentList(
+                                                                                        TypeArgumentList(
+                                                                                            SingletonSeparatedList<TypeSyntax>(
+                                                                                                IdentifierName("HttpResponseMessage")
+                                                                                            )
+                                                                                        )
+                                                                                    )
+                                                                                    .WithLeadingTrivia(
                                                                                         MemberAccessExpression(
                                                                                             SyntaxKind.SimpleMemberAccessExpression,
                                                                                             IdentifierName("Policy"),
-                                                                                            IdentifierName("Timeout")
-                                                                                        ),
-                                                                                        IdentifierName("AsAsync")
+                                                                                            IdentifierName("")
+                                                                                        )
+                                                                                        .GetLeadingTrivia()
+                                                                                    )
+                                                                                )
+                                                                                .WithExpression(
+                                                                                    MemberAccessExpression(
+                                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                                        IdentifierName("Policy"),
+                                                                                        GenericName(
+                                                                                            Identifier("TimeoutAsync")
+                                                                                        )
+                                                                                        .WithTypeArgumentList(
+                                                                                            TypeArgumentList(
+                                                                                                SingletonSeparatedList<TypeSyntax>(
+                                                                                                    IdentifierName("HttpResponseMessage")
+                                                                                                )
+                                                                                            )
+                                                                                        )
                                                                                     )
                                                                                 )
                                                                                 .WithArgumentList(
