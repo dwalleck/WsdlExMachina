@@ -1,4 +1,4 @@
-using System.IO;
+ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using WsdlExMachina.Generator;
@@ -312,6 +312,98 @@ public class EndToEndTests
             // Generate a test SOAP envelope to verify no nested headers
             // This would be a more thorough test in a real scenario
             // For now, we're just checking the code structure
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(outputDir))
+            {
+                Directory.Delete(outputDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task EndToEnd_VerifyUniqueRequestClassesForOverloadedOperations_Success()
+    {
+        // Arrange
+        var wsdlFilePath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+        var outputNamespace = "WsdlExMachina.Generated";
+        var outputDir = Path.Combine(Path.GetTempPath(), "WsdlExMachina_Test_UniqueRequests_" + Guid.NewGuid());
+        Directory.CreateDirectory(outputDir);
+
+        try
+        {
+            // Act - Generate client using CLI with multi-file option
+            var generateResult = await WsdlExMachina.Cli.Program.Main(new string[] {
+                "generate",
+                "--file", wsdlFilePath,
+                "--namespace", outputNamespace,
+                "--multi-file", "true",
+                "--output-dir", outputDir,
+                "--http-client", "true"
+            });
+
+            // Assert - Verify generate command
+            Assert.Equal(0, generateResult);
+
+            // Check the Models/Requests directory for unique request classes
+            var requestsDir = Path.Combine(outputDir, "Models", "Requests");
+            var requestFiles = Directory.GetFiles(requestsDir, "*.cs");
+
+            // Get all request files that start with "PostSinglePayment"
+            var postSinglePaymentRequests = requestFiles
+                .Where(f => Path.GetFileName(f).StartsWith("PostSinglePayment"))
+                .ToList();
+
+            // Verify we have multiple unique request classes for PostSinglePayment operations
+            Assert.True(postSinglePaymentRequests.Count > 1,
+                $"Expected multiple PostSinglePayment request classes, but found {postSinglePaymentRequests.Count}");
+
+            // Check the client files to ensure they use the correct request classes
+            var clientFiles = Directory.GetFiles(Path.Combine(outputDir, "Client"), "*.cs");
+            var clientFile = clientFiles.FirstOrDefault(f => Path.GetFileName(f).Contains("ACHTransaction"));
+
+            if (clientFile != null)
+            {
+                var clientCode = File.ReadAllText(clientFile);
+
+                // Check for methods that use different request types
+                foreach (var requestFile in postSinglePaymentRequests)
+                {
+                    var requestClassName = Path.GetFileNameWithoutExtension(requestFile);
+
+                    // Verify the client has a method that uses this request class
+                    Assert.Contains($"ParseTypeName(\"{requestClassName}\")", clientCode);
+                }
+
+                // Check for SendSoapRequestAsync calls with different request types
+                foreach (var requestFile in postSinglePaymentRequests)
+                {
+                    var requestClassName = Path.GetFileNameWithoutExtension(requestFile);
+
+                    // Verify the client has a SendSoapRequestAsync call that uses this request class
+                    Assert.Contains($"ParseTypeName(\"{requestClassName}\")", clientCode);
+                }
+            }
+
+            // Check the interface files to ensure they use the correct request classes
+            var interfaceFiles = Directory.GetFiles(Path.Combine(outputDir, "Interfaces"), "*.cs");
+            var interfaceFile = interfaceFiles.FirstOrDefault(f => Path.GetFileName(f).Contains("IACHTransaction"));
+
+            if (interfaceFile != null)
+            {
+                var interfaceCode = File.ReadAllText(interfaceFile);
+
+                // Check for methods that use different request types
+                foreach (var requestFile in postSinglePaymentRequests)
+                {
+                    var requestClassName = Path.GetFileNameWithoutExtension(requestFile);
+
+                    // Verify the interface has a method that uses this request class
+                    Assert.Contains($"ParseTypeName(\"{requestClassName}\")", interfaceCode);
+                }
+            }
         }
         finally
         {

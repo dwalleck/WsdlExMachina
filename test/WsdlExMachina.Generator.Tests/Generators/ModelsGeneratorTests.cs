@@ -384,6 +384,157 @@ namespace WsdlExMachina.Generator.Tests.Generators
             }
         }
 
+        [Fact]
+        public void Generate_CreatesUniqueRequestClassesForOverloadedOperations()
+        {
+            // Arrange
+            // Add two operations with the same name but different input messages
+            var portType = new WsdlPortType
+            {
+                Name = "TestPortType"
+            };
+
+            // First operation: PostSinglePayment
+            var operation1 = new WsdlOperation
+            {
+                Name = "PostSinglePayment",
+                Input = new WsdlOperationMessage { Message = "PostSinglePaymentSoapIn" },
+                Output = new WsdlOperationMessage { Message = "PostSinglePaymentSoapOut" }
+            };
+
+            // Second operation: PostSinglePayment with a different input message
+            var operation2 = new WsdlOperation
+            {
+                Name = "PostSinglePayment",
+                Input = new WsdlOperationMessage { Message = "PostSinglePaymentWithApplySoapIn" },
+                Output = new WsdlOperationMessage { Message = "PostSinglePaymentWithApplySoapOut" }
+            };
+
+            // Add the operations to the port type
+            portType.Operations.Add(operation1);
+            portType.Operations.Add(operation2);
+
+            // Add the port type to the WSDL definition
+            if (!WsdlDefinition.PortTypes.Any(pt => pt.Name == portType.Name))
+            {
+                WsdlDefinition.PortTypes.Add(portType);
+            }
+
+            // Add the input and output messages
+            var inputMessage1 = new WsdlMessage
+            {
+                Name = "PostSinglePaymentSoapIn"
+            };
+            inputMessage1.Parts.Add(new WsdlMessagePart { Name = "parameters", Element = "PostSinglePayment" });
+
+            var outputMessage1 = new WsdlMessage
+            {
+                Name = "PostSinglePaymentSoapOut"
+            };
+            outputMessage1.Parts.Add(new WsdlMessagePart { Name = "parameters", Element = "PostSinglePaymentResponse" });
+
+            var inputMessage2 = new WsdlMessage
+            {
+                Name = "PostSinglePaymentWithApplySoapIn"
+            };
+            inputMessage2.Parts.Add(new WsdlMessagePart { Name = "parameters", Element = "PostSinglePaymentWithApply" });
+
+            var outputMessage2 = new WsdlMessage
+            {
+                Name = "PostSinglePaymentWithApplySoapOut"
+            };
+            outputMessage2.Parts.Add(new WsdlMessagePart { Name = "parameters", Element = "PostSinglePaymentWithApplyResponse" });
+
+            // Add the messages to the WSDL definition
+            if (!WsdlDefinition.Messages.Any(m => m.Name == inputMessage1.Name))
+            {
+                WsdlDefinition.Messages.Add(inputMessage1);
+            }
+            if (!WsdlDefinition.Messages.Any(m => m.Name == outputMessage1.Name))
+            {
+                WsdlDefinition.Messages.Add(outputMessage1);
+            }
+            if (!WsdlDefinition.Messages.Any(m => m.Name == inputMessage2.Name))
+            {
+                WsdlDefinition.Messages.Add(inputMessage2);
+            }
+            if (!WsdlDefinition.Messages.Any(m => m.Name == outputMessage2.Name))
+            {
+                WsdlDefinition.Messages.Add(outputMessage2);
+            }
+
+            // Add the elements to the types
+            var element1 = new WsdlElement
+            {
+                Name = "PostSinglePayment",
+                Type = "PostSinglePaymentType"
+            };
+            var element2 = new WsdlElement
+            {
+                Name = "PostSinglePaymentResponse",
+                Type = "PostSinglePaymentResponseType"
+            };
+            var element3 = new WsdlElement
+            {
+                Name = "PostSinglePaymentWithApply",
+                Type = "PostSinglePaymentWithApplyType"
+            };
+            var element4 = new WsdlElement
+            {
+                Name = "PostSinglePaymentWithApplyResponse",
+                Type = "PostSinglePaymentWithApplyResponseType"
+            };
+
+            if (!WsdlDefinition.Types.Elements.Any(e => e.Name == element1.Name))
+            {
+                WsdlDefinition.Types.Elements.Add(element1);
+            }
+            if (!WsdlDefinition.Types.Elements.Any(e => e.Name == element2.Name))
+            {
+                WsdlDefinition.Types.Elements.Add(element2);
+            }
+            if (!WsdlDefinition.Types.Elements.Any(e => e.Name == element3.Name))
+            {
+                WsdlDefinition.Types.Elements.Add(element3);
+            }
+            if (!WsdlDefinition.Types.Elements.Any(e => e.Name == element4.Name))
+            {
+                WsdlDefinition.Types.Elements.Add(element4);
+            }
+
+            // Act
+            _generator.Generate(WsdlDefinition, OutputNamespace, OutputDir);
+
+            // Assert
+            // Check that both request classes were created with unique names
+            var requestPath1 = Path.Combine(OutputDir, "Models", "Requests", "PostSinglePaymentRequest.cs");
+            var requestPath2 = Path.Combine(OutputDir, "Models", "Requests", "PostSinglePaymentWithApplyRequest.cs");
+
+            Assert.True(File.Exists(requestPath1), "PostSinglePaymentRequest.cs file should exist");
+            Assert.True(File.Exists(requestPath2), "PostSinglePaymentWithApplyRequest.cs file should exist");
+
+            // Check that the response classes were created with unique names
+            var responsePath1 = Path.Combine(OutputDir, "Models", "Responses", "PostSinglePaymentResponse.cs");
+            var responsePath2 = Path.Combine(OutputDir, "Models", "Responses", "PostSinglePaymentWithApplyResponse.cs");
+
+            Assert.True(File.Exists(responsePath1), "PostSinglePaymentResponse.cs file should exist");
+            Assert.True(File.Exists(responsePath2), "PostSinglePaymentWithApplyResponse.cs file should exist");
+
+            // Check the content of the request classes to ensure they have the correct class names
+            var requestContent1 = File.ReadAllText(requestPath1);
+            var requestContent2 = File.ReadAllText(requestPath2);
+
+            Assert.Contains("public class PostSinglePaymentRequest", requestContent1);
+            Assert.Contains("public class PostSinglePaymentWithApplyRequest", requestContent2);
+
+            // Check the content of the response classes to ensure they have the correct class names
+            var responseContent1 = File.ReadAllText(responsePath1);
+            var responseContent2 = File.ReadAllText(responsePath2);
+
+            Assert.Contains("public class PostSinglePaymentResponse", responseContent1);
+            Assert.Contains("public class PostSinglePaymentWithApplyResponse", responseContent2);
+        }
+
         public void Dispose()
         {
             CleanupOutputDirectory();

@@ -118,19 +118,79 @@ public class ClientsGenerator : ICodeGenerator
                     ? wsdlDefinition.Messages.FirstOrDefault(m => m.Name == operation.Output.Message)
                     : null;
 
+                // Create a unique method name for this operation
+                string methodName = $"{operation.Name}Async";
+
                 // Determine return type and parameters
                 string returnType = "Task";
                 var parameters = new List<ParameterSyntax>();
 
                 if (inputMessage != null && inputMessage.Parts.Count > 0)
                 {
+                    // Create a unique request class name for this operation
+                    string requestClassName = $"{operation.Name}Request";
+
+                    // Check if we already have a method with this name
+                    if (methodNames.ContainsKey(methodName))
+                    {
+                        // For overloaded operations, append a suffix based on the input message name
+                        // This ensures unique method names while maintaining readability
+                        string suffix = string.Empty;
+                        if (inputMessage != null)
+                        {
+                            // Check if the operation name already contains the suffix we would extract
+                            // For example "PostSinglePaymentWithPaymentSourceV3_1" already contains "WithPaymentSource"
+                            string messageName = inputMessage.Name;
+                            if (messageName.Contains("With"))
+                            {
+                                string extractedSuffix = messageName.Substring(messageName.IndexOf("With"));
+                                if (extractedSuffix.EndsWith("SoapIn"))
+                                {
+                                    extractedSuffix = extractedSuffix.Substring(0, extractedSuffix.Length - 6);
+                                }
+
+                                // If the operation name already contains the suffix, don't append it again
+                                if (operation.Name.Contains(extractedSuffix))
+                                {
+                                    suffix = string.Empty;
+                                }
+                                else
+                                {
+                                    // Check if the suffix contains a version (like V3_1) that's already in the operation name
+                                    // to avoid duplicates like PostSinglePaymentV3_1WithApplyToV3_1
+                                    if (extractedSuffix.Contains("V3_1") && operation.Name.Contains("V3_1"))
+                                    {
+                                        // Replace the version in the suffix to avoid duplication
+                                        extractedSuffix = extractedSuffix.Replace("V3_1", "");
+                                    }
+
+                                    suffix = extractedSuffix;
+                                }
+                            }
+                            else if (operation.Input?.Name != null && !string.IsNullOrEmpty(operation.Input.Name))
+                            {
+                                suffix = "_" + operation.Input.Name;
+                            }
+                            else
+                            {
+                                suffix = "_" + methodNames[methodName];
+                            }
+                        }
+
+                        // Use the same suffix for the request class name as we do for the method name
+                        if (!string.IsNullOrEmpty(suffix))
+                        {
+                            requestClassName = $"{operation.Name}{suffix}Request";
+                        }
+                    }
+
                     // Use the request class
                     parameters.Add(
                         Parameter(
                             Identifier("request")
                         )
                         .WithType(
-                            ParseTypeName($"{operation.Name}Request")
+                            ParseTypeName(requestClassName)
                         )
                     );
                 }
@@ -223,8 +283,63 @@ public class ClientsGenerator : ICodeGenerator
 
                 if (outputMessage != null && outputMessage.Parts.Count > 0)
                 {
+                    // Create a unique response class name for this operation
+                    string responseClassName = $"{operation.Name}Response";
+
+                    // Check if we already have a method with this name
+                    if (methodNames.ContainsKey(methodName))
+                    {
+                        // For overloaded operations, append a suffix based on the output message name
+                        string suffix = string.Empty;
+                        if (outputMessage != null)
+                        {
+                            // Check if the operation name already contains the suffix we would extract
+                            string messageName = outputMessage.Name;
+                            if (messageName.Contains("With"))
+                            {
+                                string extractedSuffix = messageName.Substring(messageName.IndexOf("With"));
+                                if (extractedSuffix.EndsWith("SoapOut"))
+                                {
+                                    extractedSuffix = extractedSuffix.Substring(0, extractedSuffix.Length - 7);
+                                }
+
+                                // If the operation name already contains the suffix, don't append it again
+                                if (operation.Name.Contains(extractedSuffix))
+                                {
+                                    suffix = string.Empty;
+                                }
+                                else
+                                {
+                                    // Check if the suffix contains a version (like V3_1) that's already in the operation name
+                                    // to avoid duplicates like PostSinglePaymentV3_1WithApplyToV3_1
+                                    if (extractedSuffix.Contains("V3_1") && operation.Name.Contains("V3_1"))
+                                    {
+                                        // Replace the version in the suffix to avoid duplication
+                                        extractedSuffix = extractedSuffix.Replace("V3_1", "");
+                                    }
+
+                                    suffix = extractedSuffix;
+                                }
+                            }
+                            else if (operation.Output?.Name != null && !string.IsNullOrEmpty(operation.Output.Name))
+                            {
+                                suffix = "_" + operation.Output.Name;
+                            }
+                            else
+                            {
+                                suffix = "_" + methodNames[methodName];
+                            }
+                        }
+
+                        // Use the same suffix for the response class name as we do for the method name
+                        if (!string.IsNullOrEmpty(suffix))
+                        {
+                            responseClassName = $"{operation.Name}{suffix}Response";
+                        }
+                    }
+
                     // Use the response class
-                    returnType = $"Task<{operation.Name}Response>";
+                    returnType = $"Task<{responseClassName}>";
                 }
 
                 // Find the SOAP action from the lookup
@@ -233,9 +348,6 @@ public class ClientsGenerator : ICodeGenerator
                 var operationInfos = bindingOperationsLookup[operationKey].ToList();
                 var operationInfo = operationInfos.FirstOrDefault();
                 string soapAction = operationInfo?.SoapAction ?? string.Empty;
-
-                // Create a unique method name for this operation
-                string methodName = $"{operation.Name}Async";
 
                 // Check if we already have a method with this name
                 if (methodNames.ContainsKey(methodName))
@@ -266,6 +378,14 @@ public class ClientsGenerator : ICodeGenerator
                             }
                             else
                             {
+                                // Check if the suffix contains a version (like V3_1) that's already in the operation name
+                                // to avoid duplicates like PostSinglePaymentV3_1WithApplyToV3_1
+                                if (extractedSuffix.Contains("V3_1") && operation.Name.Contains("V3_1"))
+                                {
+                                    // Replace the version in the suffix to avoid duplication
+                                    extractedSuffix = extractedSuffix.Replace("V3_1", "");
+                                }
+
                                 suffix = extractedSuffix;
                             }
                         }
@@ -309,16 +429,79 @@ public class ClientsGenerator : ICodeGenerator
                 if (outputMessage != null && outputMessage.Parts.Count > 0)
                 {
                     // Return the result of SendSoapRequestAsync
+                    // Create unique request and response class names
+                    string requestClassName = $"{operation.Name}Request";
+                    string responseClassName = $"{operation.Name}Response";
+
+                    // Check if we need to use unique names for overloaded operations
+                    if (methodNames.ContainsKey(methodName) && methodNames[methodName] > 1)
+                    {
+                        // For overloaded operations, append a suffix based on the input/output message names
+                        string suffix = string.Empty;
+                        if (inputMessage != null)
+                        {
+                            // Check if the operation name already contains the suffix we would extract
+                            string messageName = inputMessage.Name;
+                            if (messageName.Contains("With"))
+                            {
+                                string extractedSuffix = messageName.Substring(messageName.IndexOf("With"));
+                                if (extractedSuffix.EndsWith("SoapIn"))
+                                {
+                                    extractedSuffix = extractedSuffix.Substring(0, extractedSuffix.Length - 6);
+                                }
+
+                                // If the operation name already contains the suffix, don't append it again
+                                if (operation.Name.Contains(extractedSuffix))
+                                {
+                                    suffix = string.Empty;
+                                }
+                                else
+                                {
+                                    // Check if the suffix contains a version (like V3_1) that's already in the operation name
+                                    // to avoid duplicates like PostSinglePaymentV3_1WithApplyToV3_1
+                                    if (extractedSuffix.Contains("V3_1") && operation.Name.Contains("V3_1"))
+                                    {
+                                        // Replace the version in the suffix to avoid duplication
+                                        extractedSuffix = extractedSuffix.Replace("V3_1", "");
+                                    }
+
+                                    suffix = extractedSuffix;
+                                }
+                            }
+                            else if (operation.Input?.Name != null && !string.IsNullOrEmpty(operation.Input.Name))
+                            {
+                                suffix = "_" + operation.Input.Name;
+                            }
+                            else
+                            {
+                                suffix = "_" + methodNames[methodName];
+                            }
+                        }
+
+                        // Use the same suffix for the request and response class names
+                        if (!string.IsNullOrEmpty(suffix))
+                        {
+                            requestClassName = $"{operation.Name}{suffix}Request";
+                            responseClassName = $"{operation.Name}{suffix}Response";
+                        }
+                    }
+
+                    // Get the parameter type from the parameter list to ensure we use the correct request type
+                    string parameterTypeName = ((IdentifierNameSyntax)((ParameterSyntax)parameters[0]).Type).Identifier.Text;
+
+                    // Get the return type from the method declaration to ensure we use the correct response type
+                    string returnTypeName = returnType.Replace("Task<", "").Replace(">", "");
+
                     var genericName = GenericName(
                         Identifier("SendSoapRequestAsync"))
                         .WithTypeArgumentList(
                             TypeArgumentList(
-                                SeparatedList<TypeSyntax>(
-                                    new[] {
-                                        ParseTypeName($"{operation.Name}Request"),
-                                        ParseTypeName($"{operation.Name}Response")
-                                    }
-                                )
+                                        SeparatedList<TypeSyntax>(
+                                            new[] {
+                                                IdentifierName(requestClassName),
+                                                IdentifierName(returnTypeName)
+                                            }
+                                        )
                             )
                         );
 
@@ -354,13 +537,71 @@ public class ClientsGenerator : ICodeGenerator
                 else
                 {
                     // Return the result of SendSoapRequestAsync with a void response
+                    // Create unique request class name
+                    string requestClassName = $"{operation.Name}Request";
+
+                    // Check if we need to use unique names for overloaded operations
+                    if (methodNames.ContainsKey(methodName) && methodNames[methodName] > 1)
+                    {
+                        // For overloaded operations, append a suffix based on the input message name
+                        string suffix = string.Empty;
+                        if (inputMessage != null)
+                        {
+                            // Check if the operation name already contains the suffix we would extract
+                            string messageName = inputMessage.Name;
+                            if (messageName.Contains("With"))
+                            {
+                                string extractedSuffix = messageName.Substring(messageName.IndexOf("With"));
+                                if (extractedSuffix.EndsWith("SoapIn"))
+                                {
+                                    extractedSuffix = extractedSuffix.Substring(0, extractedSuffix.Length - 6);
+                                }
+
+                                // If the operation name already contains the suffix, don't append it again
+                                if (operation.Name.Contains(extractedSuffix))
+                                {
+                                    suffix = string.Empty;
+                                }
+                                else
+                                {
+                                    // Check if the suffix contains a version (like V3_1) that's already in the operation name
+                                    // to avoid duplicates like PostSinglePaymentV3_1WithApplyToV3_1
+                                    if (extractedSuffix.Contains("V3_1") && operation.Name.Contains("V3_1"))
+                                    {
+                                        // Replace the version in the suffix to avoid duplication
+                                        extractedSuffix = extractedSuffix.Replace("V3_1", "");
+                                    }
+
+                                    suffix = extractedSuffix;
+                                }
+                            }
+                            else if (operation.Input?.Name != null && !string.IsNullOrEmpty(operation.Input.Name))
+                            {
+                                suffix = "_" + operation.Input.Name;
+                            }
+                            else
+                            {
+                                suffix = "_" + methodNames[methodName];
+                            }
+                        }
+
+                        // Use the same suffix for the request class name
+                        if (!string.IsNullOrEmpty(suffix))
+                        {
+                            requestClassName = $"{operation.Name}{suffix}Request";
+                        }
+                    }
+
+                    // Get the parameter type from the parameter list to ensure we use the correct request type
+                    string parameterTypeName = ((IdentifierNameSyntax)((ParameterSyntax)parameters[0]).Type).Identifier.Text;
+
                     var genericName = GenericName(
                         Identifier("SendSoapRequestAsync"))
                         .WithTypeArgumentList(
                             TypeArgumentList(
                                 SeparatedList<TypeSyntax>(
                                     new[] {
-                                        ParseTypeName($"{operation.Name}Request"),
+                                        ParseTypeName(requestClassName),
                                         ParseTypeName("object")
                                     }
                                 )

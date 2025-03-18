@@ -108,6 +108,10 @@ public class ModelsGenerator : ICodeGenerator
 
     private void GenerateRequestResponseClasses(WsdlDefinition wsdlDefinition, string outputNamespace, string outputDirectory)
     {
+        // Create dictionaries to track request and response class names to avoid duplicates
+        var requestClassNames = new Dictionary<string, int>();
+        var responseClassNames = new Dictionary<string, int>();
+
         // Generate request and response classes
         foreach (var portType in wsdlDefinition.PortTypes)
         {
@@ -125,13 +129,113 @@ public class ModelsGenerator : ICodeGenerator
                 // Generate request class
                 if (inputMessage != null && inputMessage.Parts.Count > 0)
                 {
-                    GenerateRequestClass(wsdlDefinition, outputNamespace, outputDirectory, operation, inputMessage);
+                    // Create a unique request class name for this operation
+                    string requestClassName = $"{operation.Name}Request";
+
+                    // Check if we already have a class with this name
+                    if (requestClassNames.ContainsKey(requestClassName))
+                    {
+                        // If we do, increment the count and append a suffix based on the input message name
+                        requestClassNames[requestClassName]++;
+
+                        // For overloaded operations, append a suffix based on the input message name
+                        // This ensures unique class names while maintaining readability
+                        string suffix = string.Empty;
+
+                        // Check if the operation name already contains the suffix we would extract
+                        // For example "PostSinglePaymentWithPaymentSourceV3_1" already contains "WithPaymentSource"
+                        string messageName = inputMessage.Name;
+                        if (messageName.Contains("With"))
+                        {
+                            string extractedSuffix = messageName.Substring(messageName.IndexOf("With"));
+                            if (extractedSuffix.EndsWith("SoapIn"))
+                            {
+                                extractedSuffix = extractedSuffix.Substring(0, extractedSuffix.Length - 6);
+                            }
+
+                            // If the operation name already contains the suffix, don't append it again
+                            if (operation.Name.Contains(extractedSuffix))
+                            {
+                                suffix = string.Empty;
+                            }
+                            else
+                            {
+                                suffix = extractedSuffix;
+                            }
+                        }
+                        else if (operation.Input?.Name != null && !string.IsNullOrEmpty(operation.Input.Name))
+                        {
+                            suffix = "_" + operation.Input.Name;
+                        }
+                        else
+                        {
+                            suffix = "_" + requestClassNames[requestClassName];
+                        }
+
+                        requestClassName = $"{operation.Name}{suffix}Request";
+                    }
+                    else
+                    {
+                        // If not, add it to the dictionary with a count of 1
+                        requestClassNames[requestClassName] = 1;
+                    }
+
+                    GenerateRequestClass(wsdlDefinition, outputNamespace, outputDirectory, operation, inputMessage, requestClassName);
                 }
 
                 // Generate response class
                 if (outputMessage != null && outputMessage.Parts.Count > 0)
                 {
-                    GenerateResponseClass(wsdlDefinition, outputNamespace, outputDirectory, operation, outputMessage);
+                    // Create a unique response class name for this operation
+                    string responseClassName = $"{operation.Name}Response";
+
+                    // Check if we already have a class with this name
+                    if (responseClassNames.ContainsKey(responseClassName))
+                    {
+                        // If we do, increment the count and append a suffix based on the output message name
+                        responseClassNames[responseClassName]++;
+
+                        // For overloaded operations, append a suffix based on the output message name
+                        string suffix = string.Empty;
+
+                        // Check if the operation name already contains the suffix we would extract
+                        string messageName = outputMessage.Name;
+                        if (messageName.Contains("With"))
+                        {
+                            string extractedSuffix = messageName.Substring(messageName.IndexOf("With"));
+                            if (extractedSuffix.EndsWith("SoapOut"))
+                            {
+                                extractedSuffix = extractedSuffix.Substring(0, extractedSuffix.Length - 7);
+                            }
+
+                            // If the operation name already contains the suffix, don't append it again
+                            if (operation.Name.Contains(extractedSuffix))
+                            {
+                                suffix = string.Empty;
+                            }
+                            else
+                            {
+                                suffix = extractedSuffix;
+                            }
+                        }
+                        else if (operation.Output?.Name != null && !string.IsNullOrEmpty(operation.Output.Name))
+                        {
+                            suffix = "_" + operation.Output.Name;
+                        }
+                        else
+                        {
+                            suffix = "_" + responseClassNames[responseClassName];
+                        }
+
+                        responseClassName = $"{operation.Name}{suffix}Response";
+                    }
+                    else
+                    {
+                        // If not, add it to the dictionary with a count of 1
+                        responseClassNames[responseClassName] = 1;
+                    }
+
+                    GenerateResponseClass(wsdlDefinition, outputNamespace, outputDirectory, operation, outputMessage, responseClassName);
                 }
             }
         }
@@ -527,9 +631,8 @@ public class ModelsGenerator : ICodeGenerator
     }
 
     private void GenerateRequestClass(WsdlDefinition wsdlDefinition, string outputNamespace, string outputDirectory,
-        WsdlOperation operation, WsdlMessage inputMessage)
+        WsdlOperation operation, WsdlMessage inputMessage, string requestClassName)
     {
-        var requestClassName = $"{operation.Name}Request";
         var requestClassMembers = new List<MemberDeclarationSyntax>();
 
         foreach (var part in inputMessage.Parts)
@@ -1099,9 +1202,8 @@ public class ModelsGenerator : ICodeGenerator
     }
 
     private void GenerateResponseClass(WsdlDefinition wsdlDefinition, string outputNamespace, string outputDirectory,
-        WsdlOperation operation, WsdlMessage outputMessage)
+        WsdlOperation operation, WsdlMessage outputMessage, string responseClassName)
     {
-        var responseClassName = $"{operation.Name}Response";
         var responseClassMembers = new List<MemberDeclarationSyntax>();
 
         foreach (var part in outputMessage.Parts)
