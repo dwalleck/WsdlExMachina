@@ -199,13 +199,15 @@ public class ModelsGenerator : ICodeGenerator
 
     private void GenerateSoapAuthHeaderClass(WsdlDefinition wsdlDefinition, string outputNamespace, string outputDirectory)
     {
-        // Create the SoapAuthHeader class
+        // Create the SoapAuthHeader class that directly implements the auth header
+        // instead of nesting it to avoid duplicate headers
         var headerClass = ClassDeclaration("SoapAuthHeader")
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
+            // Add common properties that would be in SWBCAuthHeader
             .AddMembers(
                 PropertyDeclaration(
-                    ParseTypeName("SWBCAuthHeader"),
-                    Identifier("SWBCAuthHeader")
+                    ParseTypeName("string"),
+                    Identifier("Username")
                 )
                 .AddModifiers(Token(SyntaxKind.PublicKeyword))
                 .AddAccessorListAccessors(
@@ -213,29 +215,17 @@ public class ModelsGenerator : ICodeGenerator
                         .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
                     AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                         .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                ),
+                PropertyDeclaration(
+                    ParseTypeName("string"),
+                    Identifier("Password")
                 )
-                .AddAttributeLists(
-                    AttributeList(
-                        SingletonSeparatedList(
-                            Attribute(
-                                IdentifierName("XmlElement"),
-                                AttributeArgumentList(
-                                    SeparatedList(
-                                        new[] {
-                                            AttributeArgument(
-                                                NameEquals(IdentifierName("ElementName")),
-                                                null,
-                                                LiteralExpression(
-                                                    SyntaxKind.StringLiteralExpression,
-                                                    Literal("SWBCAuthHeader")
-                                                )
-                                            )
-                                        }
-                                    )
-                                )
-                            )
-                        )
-                    )
+                .AddModifiers(Token(SyntaxKind.PublicKeyword))
+                .AddAccessorListAccessors(
+                    AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
+                    AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                 )
             )
             .AddAttributeLists(

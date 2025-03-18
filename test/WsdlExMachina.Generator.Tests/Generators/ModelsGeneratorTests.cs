@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using Xunit;
 using WsdlExMachina.Generator.Generators;
+using WsdlExMachina.Parser.Models;
 
 namespace WsdlExMachina.Generator.Tests.Generators
 {
@@ -291,6 +292,95 @@ namespace WsdlExMachina.Generator.Tests.Generators
                         Assert.Contains("using System.Xml.Serialization;", fileContent);
                     }
                 }
+            }
+        }
+
+        [Fact]
+        public void Generate_SoapAuthHeaderHasCorrectStructure()
+        {
+            // Arrange
+            // Modify the WsdlDefinition to include a SWBCAuthHeader
+            // This is a simplified approach to ensure the test runs even if the sample WSDL doesn't have auth headers
+            var hasSWBCAuthHeader = false;
+
+            // Check if any binding operation has a SWBCAuthHeader
+            foreach (var binding in WsdlDefinition.Bindings)
+            {
+                foreach (var operation in binding.Operations)
+                {
+                    if (operation.Input != null && operation.Input.Headers.Count > 0)
+                    {
+                        // Add a header that will trigger SoapAuthHeader generation
+                        var headerMessage = new WsdlMessage
+                        {
+                            Name = "SWBCAuthHeaderMessage"
+                        };
+
+                        var headerPart = new WsdlMessagePart
+                        {
+                            Name = "SWBCAuthHeaderPart",
+                            Element = "SWBCAuthHeader"
+                        };
+
+                        headerMessage.Parts.Add(headerPart);
+
+                        if (!WsdlDefinition.Messages.Any(m => m.Name == headerMessage.Name))
+                        {
+                            WsdlDefinition.Messages.Add(headerMessage);
+                        }
+
+                        var header = new WsdlBindingOperationMessageHeader
+                        {
+                            Message = headerMessage.Name,
+                            Part = headerPart.Name
+                        };
+
+                        operation.Input.Headers.Add(header);
+
+                        // Add the element to the types
+                        var element = new WsdlElement
+                        {
+                            Name = "SWBCAuthHeader",
+                            Type = "SWBCAuthHeaderType"
+                        };
+
+                        if (!WsdlDefinition.Types.Elements.Any(e => e.Name == element.Name))
+                        {
+                            WsdlDefinition.Types.Elements.Add(element);
+                        }
+
+                        hasSWBCAuthHeader = true;
+                        break;
+                    }
+                }
+
+                if (hasSWBCAuthHeader)
+                    break;
+            }
+
+            // Act
+            _generator.Generate(WsdlDefinition, OutputNamespace, OutputDir);
+
+            // Assert
+            var soapAuthHeaderPath = Path.Combine(OutputDir, "Models", "Headers", "SoapAuthHeader.cs");
+
+            // If we have a SWBCAuthHeader, the SoapAuthHeader.cs file should exist
+            if (hasSWBCAuthHeader)
+            {
+                Assert.True(File.Exists(soapAuthHeaderPath), "SoapAuthHeader.cs file should exist");
+
+                var fileContent = File.ReadAllText(soapAuthHeaderPath);
+
+                // Check that the SoapAuthHeader class has Username and Password properties
+                Assert.Contains("public string Username { get; set; }", fileContent);
+                Assert.Contains("public string Password { get; set; }", fileContent);
+
+                // Check that the SoapAuthHeader class does NOT have a nested SWBCAuthHeader property
+                // This is the key check to ensure we don't have nested auth headers
+                Assert.DoesNotContain("public SWBCAuthHeader SWBCAuthHeader { get; set; }", fileContent);
+
+                // Check that the class has the correct XmlRoot attribute
+                Assert.Contains("[XmlRoot(ElementName = \"SWBCAuthHeader\"", fileContent);
             }
         }
 

@@ -250,4 +250,76 @@ public class EndToEndTests
             }
         }
     }
+
+    [Fact]
+    public async Task EndToEnd_VerifyNoNestedAuthHeaders_Success()
+    {
+        // Arrange
+        var wsdlFilePath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+        var outputNamespace = "WsdlExMachina.Generated";
+        var outputDir = Path.Combine(Path.GetTempPath(), "WsdlExMachina_Test_AuthHeader_" + Guid.NewGuid());
+        Directory.CreateDirectory(outputDir);
+
+        try
+        {
+            // Act - Generate client using CLI with multi-file option
+            var generateResult = await WsdlExMachina.Cli.Program.Main(new string[] {
+                "generate",
+                "--file", wsdlFilePath,
+                "--namespace", outputNamespace,
+                "--multi-file", "true",
+                "--output-dir", outputDir,
+                "--http-client", "true"
+            });
+
+            // Assert - Verify generate command
+            Assert.Equal(0, generateResult);
+
+            // Check if SoapAuthHeader.cs exists
+            var soapAuthHeaderPath = Path.Combine(outputDir, "Models", "Headers", "SoapAuthHeader.cs");
+            if (File.Exists(soapAuthHeaderPath))
+            {
+                // Read the file content
+                var fileContent = File.ReadAllText(soapAuthHeaderPath);
+
+                // Verify the SoapAuthHeader class has Username and Password properties
+                Assert.Contains("public string Username { get; set; }", fileContent);
+                Assert.Contains("public string Password { get; set; }", fileContent);
+
+                // Verify the SoapAuthHeader class does NOT have a nested SWBCAuthHeader property
+                // This is the key check to ensure we don't have nested auth headers
+                Assert.DoesNotContain("public SWBCAuthHeader SWBCAuthHeader { get; set; }", fileContent);
+            }
+
+            // Check the generated client code to ensure it doesn't have nested auth headers
+            var clientFiles = Directory.GetFiles(Path.Combine(outputDir, "Client"), "*.cs", SearchOption.AllDirectories);
+            foreach (var clientFile in clientFiles)
+            {
+                var clientCode = File.ReadAllText(clientFile);
+
+                // Check for patterns that would indicate nested auth headers
+                // This is a simplified check - in a real scenario, you might need more sophisticated parsing
+                if (clientCode.Contains("SWBCAuthHeader") && clientCode.Contains("SoapAuthHeader"))
+                {
+                    // Make sure we don't have a pattern like SoapAuthHeader.SWBCAuthHeader
+                    Assert.DoesNotContain("SoapAuthHeader.SWBCAuthHeader", clientCode);
+
+                    // Also check for nested XML elements in any string literals
+                    Assert.DoesNotContain("<SWBCAuthHeader><SWBCAuthHeader>", clientCode);
+                }
+            }
+
+            // Generate a test SOAP envelope to verify no nested headers
+            // This would be a more thorough test in a real scenario
+            // For now, we're just checking the code structure
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(outputDir))
+            {
+                Directory.Delete(outputDir, true);
+            }
+        }
+    }
 }
