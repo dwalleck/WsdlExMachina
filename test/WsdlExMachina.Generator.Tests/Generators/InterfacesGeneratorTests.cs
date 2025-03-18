@@ -76,16 +76,56 @@ namespace WsdlExMachina.Generator.Tests.Generators
                 var fileContent = File.ReadAllText(filePath);
 
                 // Check for at least one async method
-                var uniqueOperations = portType.Operations
-                    .GroupBy(o => o.Name)
-                    .Select(g => g.First())
-                    .ToList();
-
-                if (uniqueOperations.Any())
+                if (portType.Operations.Any())
                 {
-                    var operation = uniqueOperations.First();
+                    var operation = portType.Operations.First();
                     Assert.Contains($"{operation.Name}Async", fileContent);
                 }
+            }
+        }
+
+        [Fact]
+        public void Generate_HandlesAllOperations()
+        {
+            // Act
+            _generator.Generate(WsdlDefinition, OutputNamespace, OutputDir);
+
+            // Assert
+            foreach (var portType in WsdlDefinition.PortTypes)
+            {
+                var filePath = Path.Combine(OutputDir, "Interfaces", $"I{portType.Name}.cs");
+                var fileContent = File.ReadAllText(filePath);
+
+                // Count the number of operations in the WSDL
+                int operationCount = portType.Operations.Count;
+
+                // Count the number of Async methods in the generated code
+                int asyncMethodCount = 0;
+                int index = 0;
+                while ((index = fileContent.IndexOf("Async(", index + 1)) != -1)
+                {
+                    asyncMethodCount++;
+                }
+
+                // The number of Async methods should match the number of operations
+                Assert.Equal(operationCount, asyncMethodCount);
+            }
+        }
+
+        [Fact]
+        public void Generate_HandlesOperationsWithSOR()
+        {
+            // Act
+            _generator.Generate(WsdlDefinition, OutputNamespace, OutputDir);
+
+            // Assert
+            foreach (var portType in WsdlDefinition.PortTypes)
+            {
+                var filePath = Path.Combine(OutputDir, "Interfaces", $"I{portType.Name}.cs");
+                var fileContent = File.ReadAllText(filePath);
+
+                // Check for the specific SOR operation
+                Assert.Contains("PostSinglePaymentWithAchWebValidationWithACHWebValidationSORAsync", fileContent);
             }
         }
 

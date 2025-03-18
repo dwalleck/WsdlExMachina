@@ -131,19 +131,72 @@ namespace WsdlExMachina.Generator.Tests.Generators
                         if (portType != null)
                         {
                             // Check for at least one async method
-                            var uniqueOperations = portType.Operations
-                                .GroupBy(o => o.Name)
-                                .Select(g => g.First())
-                                .ToList();
-
-                            if (uniqueOperations.Any())
+                            if (portType.Operations.Any())
                             {
-                                var operation = uniqueOperations.First();
+                                var operation = portType.Operations.First();
                                 Assert.Contains($"public {(operation.Output != null ? $"Task<{operation.Name}Response>" : "Task")} {operation.Name}Async", fileContent);
                             }
                         }
                     }
                 }
+            }
+        }
+
+        [Fact]
+        public void Generate_HandlesAllOperations()
+        {
+            // Act
+            _generator.Generate(WsdlDefinition, OutputNamespace, OutputDir);
+
+            // Assert
+            foreach (var service in WsdlDefinition.Services)
+            {
+                var filePath = Path.Combine(OutputDir, "Client", $"{service.Name}Client.cs");
+                var fileContent = File.ReadAllText(filePath);
+
+                // Find the port type for this service
+                var port = service.Ports.FirstOrDefault();
+                if (port != null)
+                {
+                    var binding = WsdlDefinition.Bindings.FirstOrDefault(b => b.Name == port.Binding);
+                    if (binding != null)
+                    {
+                        var portType = WsdlDefinition.PortTypes.FirstOrDefault(pt => pt.Name == binding.Type);
+                        if (portType != null)
+                        {
+                            // Count the number of operations in the WSDL
+                            int operationCount = portType.Operations.Count;
+
+                            // Count the number of Async methods in the generated code
+                            int asyncMethodCount = 0;
+                            int index = 0;
+                            while ((index = fileContent.IndexOf("Async(", index + 1)) != -1)
+                            {
+                                asyncMethodCount++;
+                            }
+
+                            // The number of Async methods should match the number of operations
+                            Assert.Equal(operationCount, asyncMethodCount);
+                        }
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void Generate_HandlesOperationsWithSOR()
+        {
+            // Act
+            _generator.Generate(WsdlDefinition, OutputNamespace, OutputDir);
+
+            // Assert
+            foreach (var service in WsdlDefinition.Services)
+            {
+                var filePath = Path.Combine(OutputDir, "Client", $"{service.Name}Client.cs");
+                var fileContent = File.ReadAllText(filePath);
+
+                // Check for the specific SOR operation
+                Assert.Contains("PostSinglePaymentWithAchWebValidationWithACHWebValidationSORAsync", fileContent);
             }
         }
 

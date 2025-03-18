@@ -93,11 +93,9 @@ public class ClientsGenerator : ICodeGenerator
             );
 
             // Add method implementations
-            // Get unique operations to avoid duplicates
-            var uniqueOperations = portType.Operations
-                .GroupBy(o => o.Name)
-                .Select(g => g.First())
-                .ToList();
+            // We need to handle operations with the same name but different input/output messages
+            // Create a dictionary to track method names to avoid duplicates
+            var methodNames = new Dictionary<string, int>();
 
             // Create a lookup for binding operations to find the SOAP action quickly
             // Use a composite key of operation name and input name to handle overloaded operations
@@ -109,7 +107,7 @@ public class ClientsGenerator : ICodeGenerator
                     bo => new { SoapAction = bo.SoapAction, InputName = bo.Input?.Name ?? string.Empty }
                 );
 
-            foreach (var operation in uniqueOperations)
+            foreach (var operation in portType.Operations)
             {
                 // Find the input and output messages
                 var inputMessage = operation.Input != null
@@ -236,13 +234,67 @@ public class ClientsGenerator : ICodeGenerator
                 var operationInfo = operationInfos.FirstOrDefault();
                 string soapAction = operationInfo?.SoapAction ?? string.Empty;
 
-                // Use the operation name for the method name to ensure consistency with the interface
-                string methodName = operation.Name;
+                // Create a unique method name for this operation
+                string methodName = $"{operation.Name}Async";
 
-                // Create the method implementation
+                // Check if we already have a method with this name
+                if (methodNames.ContainsKey(methodName))
+                {
+                    // If we do, increment the count and append it to the method name
+                    methodNames[methodName]++;
+
+                    // For overloaded operations, append a suffix based on the input message name
+                    // This ensures unique method names while maintaining readability
+                    string suffix = string.Empty;
+                    if (inputMessage != null)
+                    {
+                        // Check if the operation name already contains the suffix we would extract
+                        // For example "PostSinglePaymentWithPaymentSourceV3_1" already contains "WithPaymentSource"
+                        string messageName = inputMessage.Name;
+                        if (messageName.Contains("With"))
+                        {
+                            string extractedSuffix = messageName.Substring(messageName.IndexOf("With"));
+                            if (extractedSuffix.EndsWith("SoapIn"))
+                            {
+                                extractedSuffix = extractedSuffix.Substring(0, extractedSuffix.Length - 6);
+                            }
+
+                            // If the operation name already contains the suffix, don't append it again
+                            if (operation.Name.Contains(extractedSuffix))
+                            {
+                                suffix = string.Empty;
+                            }
+                            else
+                            {
+                                suffix = extractedSuffix;
+                            }
+                        }
+                        else if (operation.Input?.Name != null && !string.IsNullOrEmpty(operation.Input.Name))
+                        {
+                            suffix = "_" + operation.Input.Name;
+                        }
+                        else
+                        {
+                            suffix = "_" + methodNames[methodName];
+                        }
+                    }
+                    else
+                    {
+                        suffix = "_" + methodNames[methodName];
+                    }
+
+                    methodName = $"{operation.Name}{suffix}Async";
+                }
+                else
+                {
+                    // If not, add it to the dictionary with a count of 1
+                    methodNames[methodName] = 1;
+                }
+
+                // Create the method implementation with the unique name
                 var methodDeclaration = MethodDeclaration(
                     ParseTypeName(returnType),
-                    Identifier($"{methodName}Async")
+                    Identifier(methodName)
                 )
                 .AddModifiers(Token(SyntaxKind.PublicKeyword))
                 .AddParameterListParameters(parameters.ToArray());

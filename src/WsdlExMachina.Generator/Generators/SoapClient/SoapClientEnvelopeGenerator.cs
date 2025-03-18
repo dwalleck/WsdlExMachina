@@ -326,65 +326,65 @@ public class SoapClientEnvelopeGenerator : ISoapClientComponentGenerator
                                                     )
                                                 )
                                             ),
-                                            LocalDeclarationStatement(
-                                                VariableDeclaration(
-                                                    IdentifierName("var")
-                                                )
-                                                .WithVariables(
-                                                    SingletonSeparatedList(
-                                                        VariableDeclarator(
-                                                            Identifier("stringWriter")
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            IdentifierName("var")
+                        )
+                        .WithVariables(
+                            SingletonSeparatedList(
+                                VariableDeclarator(
+                                    Identifier("bodyStringWriter")
+                                )
+                                .WithInitializer(
+                                    EqualsValueClause(
+                                        ObjectCreationExpression(
+                                            IdentifierName("StringWriter")
+                                        )
+                                        .WithArgumentList(
+                                            ArgumentList()
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            IdentifierName("var")
+                        )
+                        .WithVariables(
+                            SingletonSeparatedList(
+                                VariableDeclarator(
+                                    Identifier("bodyXmlWriter")
+                                )
+                                .WithInitializer(
+                                    EqualsValueClause(
+                                        InvocationExpression(
+                                            MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName("XmlWriter"),
+                                                IdentifierName("Create")
+                                            )
+                                        )
+                                        .WithArgumentList(
+                                            ArgumentList(
+                                                SeparatedList<ArgumentSyntax>(
+                                                    new[] {
+                                                        Argument(
+                                                            IdentifierName("bodyStringWriter")
+                                                        ),
+                                                        Argument(
+                                                            IdentifierName("settings")
                                                         )
-                                                        .WithInitializer(
-                                                            EqualsValueClause(
-                                                                ObjectCreationExpression(
-                                                                    IdentifierName("StringWriter")
-                                                                )
-                                                                .WithArgumentList(
-                                                                    ArgumentList()
-                                                                )
-                                                            )
-                                                        )
-                                                    )
+                                                    }
                                                 )
-                                            ),
-                                            LocalDeclarationStatement(
-                                                VariableDeclaration(
-                                                    IdentifierName("var")
-                                                )
-                                                .WithVariables(
-                                                    SingletonSeparatedList(
-                                                        VariableDeclarator(
-                                                            Identifier("xmlWriter")
-                                                        )
-                                                        .WithInitializer(
-                                                            EqualsValueClause(
-                                                                InvocationExpression(
-                                                                    MemberAccessExpression(
-                                                                        SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName("XmlWriter"),
-                                                                        IdentifierName("Create")
-                                                                    )
-                                                                )
-                                                                .WithArgumentList(
-                                                                    ArgumentList(
-                                                                        SeparatedList<ArgumentSyntax>(
-                                                                            new[] {
-                                                                                Argument(
-                                                                                    IdentifierName("stringWriter")
-                                                                                ),
-                                                                                Argument(
-                                                                                    IdentifierName("settings")
-                                                                                )
-                                                                            }
-                                                                        )
-                                                                    )
-                                                                )
-                                                            )
-                                                        )
-                                                    )
-                                                )
-                                            ),
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
                                             ExpressionStatement(
                                                 InvocationExpression(
                                                     MemberAccessExpression(
@@ -398,7 +398,7 @@ public class SoapClientEnvelopeGenerator : ISoapClientComponentGenerator
                                                         SeparatedList<ArgumentSyntax>(
                                                             new[] {
                                                                 Argument(
-                                                                    IdentifierName("xmlWriter")
+                                            IdentifierName("bodyXmlWriter")
                                                                 ),
                                                                 Argument(
                                                                     IdentifierName("header")
@@ -423,13 +423,13 @@ public class SoapClientEnvelopeGenerator : ISoapClientComponentGenerator
                                                     ArgumentList(
                                                         SingletonSeparatedList(
                                                             Argument(
-                                                                InvocationExpression(
-                                                                    MemberAccessExpression(
-                                                                        SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName("stringWriter"),
-                                                                        IdentifierName("ToString")
-                                                                    )
-                                                                )
+                                        InvocationExpression(
+                                            MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName("bodyStringWriter"),
+                                                IdentifierName("ToString")
+                                            )
+                                        )
                                                                 .WithArgumentList(
                                                                     ArgumentList()
                                                                 )

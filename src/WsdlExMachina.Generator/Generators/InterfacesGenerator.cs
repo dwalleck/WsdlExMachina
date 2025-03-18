@@ -28,13 +28,11 @@ public class InterfacesGenerator : ICodeGenerator
                 .AddModifiers(Token(SyntaxKind.PublicKeyword));
 
             // Add methods for each operation
-            // Group operations by name to avoid duplicates
-            var uniqueOperations = portType.Operations
-                .GroupBy(o => o.Name)
-                .Select(g => g.First())
-                .ToList();
+            // We need to handle operations with the same name but different input/output messages
+            // Create a dictionary to track method names to avoid duplicates
+            var methodNames = new Dictionary<string, int>();
 
-            foreach (var operation in uniqueOperations)
+            foreach (var operation in portType.Operations)
             {
                 // Find the input and output messages
                 var inputMessage = operation.Input != null
@@ -151,10 +149,67 @@ public class InterfacesGenerator : ICodeGenerator
                     returnType = $"Task<{operation.Name}Response>";
                 }
 
-                // Create the method declaration
+                // Create a unique method name for this operation
+                string methodName = $"{operation.Name}Async";
+
+                // Check if we already have a method with this name
+                if (methodNames.ContainsKey(methodName))
+                {
+                    // If we do, increment the count and append it to the method name
+                    methodNames[methodName]++;
+
+                    // For overloaded operations, append a suffix based on the input message name
+                    // This ensures unique method names while maintaining readability
+                    string suffix = string.Empty;
+                    if (inputMessage != null)
+                    {
+                        // Check if the operation name already contains the suffix we would extract
+                        // For example "PostSinglePaymentWithPaymentSourceV3_1" already contains "WithPaymentSource"
+                        string messageName = inputMessage.Name;
+                        if (messageName.Contains("With"))
+                        {
+                            string extractedSuffix = messageName.Substring(messageName.IndexOf("With"));
+                            if (extractedSuffix.EndsWith("SoapIn"))
+                            {
+                                extractedSuffix = extractedSuffix.Substring(0, extractedSuffix.Length - 6);
+                            }
+
+                            // If the operation name already contains the suffix, don't append it again
+                            if (operation.Name.Contains(extractedSuffix))
+                            {
+                                suffix = string.Empty;
+                            }
+                            else
+                            {
+                                suffix = extractedSuffix;
+                            }
+                        }
+                        else if (operation.Input?.Name != null && !string.IsNullOrEmpty(operation.Input.Name))
+                        {
+                            suffix = "_" + operation.Input.Name;
+                        }
+                        else
+                        {
+                            suffix = "_" + methodNames[methodName];
+                        }
+                    }
+                    else
+                    {
+                        suffix = "_" + methodNames[methodName];
+                    }
+
+                    methodName = $"{operation.Name}{suffix}Async";
+                }
+                else
+                {
+                    // If not, add it to the dictionary with a count of 1
+                    methodNames[methodName] = 1;
+                }
+
+                // Create the method declaration with the unique name
                 var methodDeclaration = MethodDeclaration(
                     ParseTypeName(returnType),
-                    Identifier($"{operation.Name}Async")
+                    Identifier(methodName)
                 )
                 .AddParameterListParameters(parameters.ToArray())
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
