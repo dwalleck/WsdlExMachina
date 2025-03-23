@@ -5,6 +5,7 @@
 test-output*
 client*
 generated-code*
+generated*
 # dotenv files
 .env
 

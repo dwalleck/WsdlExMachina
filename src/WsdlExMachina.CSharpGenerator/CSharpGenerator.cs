@@ -29,16 +29,35 @@ namespace WsdlExMachina.CSharpGenerator;
         /// <exception cref="CodeGenerationException">Thrown when an error occurs during code generation.</exception>
         public GeneratedCodeResult Generate(WsdlDefinition wsdl)
         {
+            // Extract namespace from WSDL target namespace
+            string namespaceName = string.IsNullOrEmpty(wsdl.TargetNamespace)
+                ? "DefaultNamespace"
+                : _typeMapper.GetCSharpNamespace(wsdl.TargetNamespace);
+
+            return Generate(wsdl, namespaceName);
+        }
+
+        /// <summary>
+        /// Generates C# code from a WSDL definition with a specified namespace.
+        /// </summary>
+        /// <param name="wsdl">The WSDL definition.</param>
+        /// <param name="namespaceName">The namespace to use for the generated code.</param>
+        /// <returns>A <see cref="GeneratedCodeResult"/> containing the generated code.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="wsdl"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="namespaceName"/> is null or empty.</exception>
+        /// <exception cref="CodeGenerationException">Thrown when an error occurs during code generation.</exception>
+        public GeneratedCodeResult Generate(WsdlDefinition wsdl, string namespaceName)
+        {
             ArgumentNullException.ThrowIfNull(wsdl);
+
+            if (string.IsNullOrEmpty(namespaceName))
+            {
+                throw new ArgumentException("Namespace name cannot be null or empty.", nameof(namespaceName));
+            }
 
             try
             {
                 var result = new GeneratedCodeResult();
-
-                // Extract namespace from WSDL target namespace
-                string namespaceName = string.IsNullOrEmpty(wsdl.TargetNamespace)
-                    ? "DefaultNamespace"
-                    : _typeMapper.GetCSharpNamespace(wsdl.TargetNamespace);
 
                 // Generate all types at once
                 var generatedCode = _generator.GenerateAll(wsdl, namespaceName);
