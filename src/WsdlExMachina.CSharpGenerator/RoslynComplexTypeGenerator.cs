@@ -232,6 +232,24 @@ namespace WsdlExMachina.CSharpGenerator
                 "XmlElement",
                 ("ElementName", xmlElementName));
 
+            // Create initializer based on type
+            ExpressionSyntax initializer = null;
+            if (typeName.Equals("string", StringComparison.OrdinalIgnoreCase))
+            {
+                // Initialize string properties to string.Empty
+                initializer = SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName("string"),
+                    SyntaxFactory.IdentifierName("Empty"));
+            }
+            else if (typeName.StartsWith("List<", StringComparison.OrdinalIgnoreCase))
+            {
+                // Initialize List properties to new List<T>()
+                initializer = SyntaxFactory.ObjectCreationExpression(
+                    SyntaxFactory.ParseTypeName(typeName))
+                    .WithArgumentList(SyntaxFactory.ArgumentList());
+            }
+
             // Create property
             var property = SyntaxFactory.PropertyDeclaration(
                 SyntaxFactory.ParseTypeName(typeName),
@@ -245,6 +263,14 @@ namespace WsdlExMachina.CSharpGenerator
                 .AddAttributeLists(
                     SyntaxFactory.AttributeList(
                         SyntaxFactory.SingletonSeparatedList(xmlElementAttribute)));
+
+            // Add initializer if we have one
+            if (initializer != null)
+            {
+                property = property.WithInitializer(
+                    SyntaxFactory.EqualsValueClause(initializer))
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+            }
 
             // Add a newline before the property for better readability
             var leadingTrivia = SyntaxFactory.TriviaList(
