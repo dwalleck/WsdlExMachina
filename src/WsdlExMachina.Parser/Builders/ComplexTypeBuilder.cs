@@ -22,8 +22,8 @@ public class ComplexTypeBuilder(XElement complexTypeElement, string schemaNamesp
     /// <summary>
     /// Builds the WsdlComplexType object.
     /// </summary>
-    /// <returns>The built WsdlComplexType.</returns>
-    public WsdlComplexType Build()
+    /// <returns>A tuple containing the built WsdlComplexType and a list of extracted nested complex types.</returns>
+    public (WsdlComplexType ComplexType, List<WsdlComplexType> ExtractedComplexTypes) Build()
     {
         _complexType.Name = _complexTypeElement.Attribute("name")?.Value ?? string.Empty;
         _complexType.Namespace = _schemaNamespace;
@@ -41,13 +41,23 @@ public class ComplexTypeBuilder(XElement complexTypeElement, string schemaNamesp
                 _schemaNamespace);
         }
 
+        // List to collect extracted nested complex types
+        var extractedComplexTypes = new List<WsdlComplexType>();
+
         // Parse elements
         var sequenceElement = _complexTypeElement.Descendants().FirstOrDefault(e => e.Name.LocalName == "sequence");
         if (sequenceElement != null)
         {
             foreach (var elementElement in sequenceElement.Elements().Where(e => e.Name.LocalName == "element"))
             {
-                _complexType.Elements.Add(new ElementBuilder(elementElement, _schemaNamespace).Build());
+                var (element, extractedComplexType) = new ElementBuilder(elementElement, _schemaNamespace).Build();
+                _complexType.Elements.Add(element);
+
+                // If there's an extracted complex type, add it to the list
+                if (extractedComplexType != null)
+                {
+                    extractedComplexTypes.Add(extractedComplexType);
+                }
             }
         }
 
@@ -55,7 +65,7 @@ public class ComplexTypeBuilder(XElement complexTypeElement, string schemaNamesp
         // This must be done after parsing elements so we can modify them
         DetectArrayType();
 
-        return _complexType;
+        return (_complexType, extractedComplexTypes);
     }
 
     /// <summary>
@@ -79,7 +89,7 @@ public class ComplexTypeBuilder(XElement complexTypeElement, string schemaNamesp
                     var elementElement = elements[0];
 
                     // Set the IsArray flag on the element
-                    var element = new ElementBuilder(elementElement, _schemaNamespace).Build();
+                    var (element, extractedComplexType) = new ElementBuilder(elementElement, _schemaNamespace).Build();
                     element.IsArray = true;
 
                     // If the element doesn't have a type attribute, use the one from the array name

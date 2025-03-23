@@ -20,10 +20,10 @@ public class ElementBuilder(XElement elementElement, string schemaNamespace)
     private readonly WsdlElement _element = new();
 
     /// <summary>
-    /// Builds the WsdlElement object.
+    /// Builds the WsdlElement object and extracts any inline complex type.
     /// </summary>
-    /// <returns>The built WsdlElement.</returns>
-    public WsdlElement Build()
+    /// <returns>A tuple containing the built WsdlElement and an optional extracted WsdlComplexType.</returns>
+    public (WsdlElement Element, WsdlComplexType? ExtractedComplexType) Build()
     {
         _element.Name = _elementElement.Attribute("name")?.Value ?? string.Empty;
         _element.Namespace = _schemaNamespace;
@@ -66,11 +66,26 @@ public class ElementBuilder(XElement elementElement, string schemaNamespace)
         {
             _element.IsComplexType = true;
 
-            // We don't actually add child elements to the WsdlElement since it doesn't have an Elements property
-            // Instead, we mark it as a complex type and the consumer should look up the complex type definition
-            // in the WsdlTypes.ComplexTypes collection
+            // Generate a name for the complex type based on the element name
+            string complexTypeName = _element.Name + "Type";
+
+            // Create a new XElement for the complex type with the generated name
+            var namedComplexTypeElement = new XElement(complexTypeElement);
+            namedComplexTypeElement.Add(new XAttribute("name", complexTypeName));
+
+            // Build the complex type and get any nested extracted complex types
+            var (complexType, extractedNestedComplexTypes) = new ComplexTypeBuilder(namedComplexTypeElement, _schemaNamespace).Build();
+
+            // Set the element's type to reference this complex type
+            _element.Type = complexTypeName;
+            _element.TypeNamespace = _schemaNamespace;
+
+            // Return the element and the extracted complex type
+            // The TypesBuilder will handle adding the nested complex types
+            return (_element, complexType);
         }
 
-        return _element;
+        // If there's no inline complex type, just return the element with no extracted complex type
+        return (_element, null);
     }
 }

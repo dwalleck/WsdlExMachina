@@ -57,7 +57,7 @@ public static class WsdlSpecialCaseHandler
                     var elementElement = elements[0];
 
                     // Set the IsArray flag on the element
-                    var element = new ElementBuilder(elementElement, schemaNamespace).Build();
+                    var (element, extractedComplexType) = new ElementBuilder(elementElement, schemaNamespace).Build();
                     element.IsArray = true;
 
                     // If the element doesn't have a type attribute, use the one from the array name

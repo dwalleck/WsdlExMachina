@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\WsdlExMachina.Parser\WsdlExMachina.Parser.csproj" />
+    <ProjectReference Include="..\..\src\WsdlExMachina.CSharpGenerator\WsdlExMachina.CSharpGenerator.csproj" />
   </ItemGroup>
 
 </Project>
