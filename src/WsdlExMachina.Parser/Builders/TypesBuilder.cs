@@ -8,21 +8,15 @@ namespace WsdlExMachina.Parser.Builders;
 /// <summary>
 /// Builder for creating WsdlTypes objects from XML.
 /// </summary>
-public class TypesBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="TypesBuilder"/> class.
+/// </remarks>
+/// <param name="typesElement">The XML element containing the types.</param>
+/// <exception cref="ArgumentNullException">Thrown when typesElement is null.</exception>
+public class TypesBuilder(XElement typesElement)
 {
-    private readonly XElement _typesElement;
+    private readonly XElement _typesElement = typesElement ?? throw new ArgumentNullException(nameof(typesElement));
     private readonly WsdlTypes _types = new();
-    private const string XsdNamespace = "http://www.w3.org/2001/XMLSchema";
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TypesBuilder"/> class.
-    /// </summary>
-    /// <param name="typesElement">The XML element containing the types.</param>
-    /// <exception cref="ArgumentNullException">Thrown when typesElement is null.</exception>
-    public TypesBuilder(XElement typesElement)
-    {
-        _typesElement = typesElement ?? throw new ArgumentNullException(nameof(typesElement));
-    }
 
     /// <summary>
     /// Builds the WsdlTypes object.

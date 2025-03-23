@@ -7,24 +7,17 @@ namespace WsdlExMachina.Parser.Builders;
 /// <summary>
 /// Builder for creating WsdlSimpleType objects from XML.
 /// </summary>
-public class SimpleTypeBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="SimpleTypeBuilder"/> class.
+/// </remarks>
+/// <param name="simpleTypeElement">The XML element containing the simple type.</param>
+/// <param name="schemaNamespace">The namespace of the schema.</param>
+/// <exception cref="ArgumentNullException">Thrown when simpleTypeElement is null.</exception>
+public class SimpleTypeBuilder(XElement simpleTypeElement, string schemaNamespace)
 {
-    private readonly XElement _simpleTypeElement;
-    private readonly string _schemaNamespace;
+    private readonly XElement _simpleTypeElement = simpleTypeElement ?? throw new ArgumentNullException(nameof(simpleTypeElement));
+    private readonly string _schemaNamespace = schemaNamespace;
     private readonly WsdlSimpleType _simpleType = new();
-    private const string XsdNamespace = "http://www.w3.org/2001/XMLSchema";
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SimpleTypeBuilder"/> class.
-    /// </summary>
-    /// <param name="simpleTypeElement">The XML element containing the simple type.</param>
-    /// <param name="schemaNamespace">The namespace of the schema.</param>
-    /// <exception cref="ArgumentNullException">Thrown when simpleTypeElement is null.</exception>
-    public SimpleTypeBuilder(XElement simpleTypeElement, string schemaNamespace)
-    {
-        _simpleTypeElement = simpleTypeElement ?? throw new ArgumentNullException(nameof(simpleTypeElement));
-        _schemaNamespace = schemaNamespace;
-    }
 
     /// <summary>
     /// Builds the WsdlSimpleType object.

@@ -7,20 +7,15 @@ namespace WsdlExMachina.Parser.Builders;
 /// <summary>
 /// Builder for creating WsdlMessage objects from XML.
 /// </summary>
-public class MessageBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="MessageBuilder"/> class.
+/// </remarks>
+/// <param name="messageElement">The XML element containing the message.</param>
+/// <exception cref="ArgumentNullException">Thrown when messageElement is null.</exception>
+public class MessageBuilder(XElement messageElement)
 {
-    private readonly XElement _messageElement;
+    private readonly XElement _messageElement = messageElement ?? throw new ArgumentNullException(nameof(messageElement));
     private readonly WsdlMessage _message = new();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MessageBuilder"/> class.
-    /// </summary>
-    /// <param name="messageElement">The XML element containing the message.</param>
-    /// <exception cref="ArgumentNullException">Thrown when messageElement is null.</exception>
-    public MessageBuilder(XElement messageElement)
-    {
-        _messageElement = messageElement ?? throw new ArgumentNullException(nameof(messageElement));
-    }
 
     /// <summary>
     /// Builds the WsdlMessage object.

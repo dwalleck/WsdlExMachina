@@ -18,7 +18,6 @@ public class ElementBuilder(XElement elementElement, string schemaNamespace)
     private readonly XElement _elementElement = elementElement ?? throw new ArgumentNullException(nameof(elementElement));
     private readonly string _schemaNamespace = schemaNamespace;
     private readonly WsdlElement _element = new();
-    private const string XsdNamespace = "http://www.w3.org/2001/XMLSchema";
 
     /// <summary>
     /// Builds the WsdlElement object.

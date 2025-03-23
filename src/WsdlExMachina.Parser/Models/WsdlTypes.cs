@@ -26,6 +26,11 @@ public class WsdlTypes
     /// Gets or sets the collection of elements defined in the schemas.
     /// </summary>
     public List<WsdlElement> Elements { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the collection of imported namespaces.
+    /// </summary>
+    public List<string> ImportedNamespaces { get; set; } = [];
 }
 
 /// <summary>
@@ -57,6 +62,21 @@ public class WsdlComplexType
     /// Gets or sets the namespace of the base type.
     /// </summary>
     public string? BaseTypeNamespace { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this complex type represents an array.
+    /// </summary>
+    public bool IsArray { get; set; }
+
+    /// <summary>
+    /// Gets or sets the type of the array items if this complex type represents an array.
+    /// </summary>
+    public string? ArrayItemType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the namespace of the array item type.
+    /// </summary>
+    public string? ArrayItemTypeNamespace { get; set; }
 }
 
 /// <summary>

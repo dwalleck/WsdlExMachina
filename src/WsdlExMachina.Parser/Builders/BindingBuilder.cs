@@ -7,22 +7,17 @@ namespace WsdlExMachina.Parser.Builders;
 /// <summary>
 /// Builder for creating WsdlBinding objects from XML.
 /// </summary>
-public class BindingBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="BindingBuilder"/> class.
+/// </remarks>
+/// <param name="bindingElement">The XML element containing the binding.</param>
+/// <exception cref="ArgumentNullException">Thrown when bindingElement is null.</exception>
+public class BindingBuilder(XElement bindingElement)
 {
-    private readonly XElement _bindingElement;
+    private readonly XElement _bindingElement = bindingElement ?? throw new ArgumentNullException(nameof(bindingElement));
     private readonly WsdlBinding _binding = new();
     private const string SoapNamespace = "http://schemas.xmlsoap.org/wsdl/soap/";
     private const string Soap12Namespace = "http://schemas.xmlsoap.org/wsdl/soap12/";
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BindingBuilder"/> class.
-    /// </summary>
-    /// <param name="bindingElement">The XML element containing the binding.</param>
-    /// <exception cref="ArgumentNullException">Thrown when bindingElement is null.</exception>
-    public BindingBuilder(XElement bindingElement)
-    {
-        _bindingElement = bindingElement ?? throw new ArgumentNullException(nameof(bindingElement));
-    }
 
     /// <summary>
     /// Builds the WsdlBinding object.
@@ -66,22 +61,17 @@ public class BindingBuilder
 /// <summary>
 /// Builder for creating WsdlBindingOperation objects from XML.
 /// </summary>
-public class BindingOperationBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="BindingOperationBuilder"/> class.
+/// </remarks>
+/// <param name="operationElement">The XML element containing the operation.</param>
+/// <exception cref="ArgumentNullException">Thrown when operationElement is null.</exception>
+public class BindingOperationBuilder(XElement operationElement)
 {
-    private readonly XElement _operationElement;
+    private readonly XElement _operationElement = operationElement ?? throw new ArgumentNullException(nameof(operationElement));
     private readonly WsdlBindingOperation _operation = new();
     private const string SoapNamespace = "http://schemas.xmlsoap.org/wsdl/soap/";
     private const string Soap12Namespace = "http://schemas.xmlsoap.org/wsdl/soap12/";
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BindingOperationBuilder"/> class.
-    /// </summary>
-    /// <param name="operationElement">The XML element containing the operation.</param>
-    /// <exception cref="ArgumentNullException">Thrown when operationElement is null.</exception>
-    public BindingOperationBuilder(XElement operationElement)
-    {
-        _operationElement = operationElement ?? throw new ArgumentNullException(nameof(operationElement));
-    }
 
     /// <summary>
     /// Builds the WsdlBindingOperation object.
@@ -130,22 +120,17 @@ public class BindingOperationBuilder
 /// <summary>
 /// Builder for creating WsdlBindingOperationMessage objects from XML.
 /// </summary>
-public class BindingOperationMessageBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="BindingOperationMessageBuilder"/> class.
+/// </remarks>
+/// <param name="messageElement">The XML element containing the message.</param>
+/// <exception cref="ArgumentNullException">Thrown when messageElement is null.</exception>
+public class BindingOperationMessageBuilder(XElement messageElement)
 {
-    private readonly XElement _messageElement;
+    private readonly XElement _messageElement = messageElement ?? throw new ArgumentNullException(nameof(messageElement));
     private readonly WsdlBindingOperationMessage _message = new();
     private const string SoapNamespace = "http://schemas.xmlsoap.org/wsdl/soap/";
     private const string Soap12Namespace = "http://schemas.xmlsoap.org/wsdl/soap12/";
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BindingOperationMessageBuilder"/> class.
-    /// </summary>
-    /// <param name="messageElement">The XML element containing the message.</param>
-    /// <exception cref="ArgumentNullException">Thrown when messageElement is null.</exception>
-    public BindingOperationMessageBuilder(XElement messageElement)
-    {
-        _messageElement = messageElement ?? throw new ArgumentNullException(nameof(messageElement));
-    }
 
     /// <summary>
     /// Builds the WsdlBindingOperationMessage object.

@@ -7,22 +7,15 @@ namespace WsdlExMachina.Parser.Builders;
 /// <summary>
 /// Builder for creating WsdlService objects from XML.
 /// </summary>
-public class ServiceBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="ServiceBuilder"/> class.
+/// </remarks>
+/// <param name="serviceElement">The XML element containing the service.</param>
+/// <exception cref="ArgumentNullException">Thrown when serviceElement is null.</exception>
+public class ServiceBuilder(XElement serviceElement)
 {
-    private readonly XElement _serviceElement;
+    private readonly XElement _serviceElement = serviceElement ?? throw new ArgumentNullException(nameof(serviceElement));
     private readonly WsdlService _service = new();
-    private const string SoapNamespace = "http://schemas.xmlsoap.org/wsdl/soap/";
-    private const string Soap12Namespace = "http://schemas.xmlsoap.org/wsdl/soap12/";
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ServiceBuilder"/> class.
-    /// </summary>
-    /// <param name="serviceElement">The XML element containing the service.</param>
-    /// <exception cref="ArgumentNullException">Thrown when serviceElement is null.</exception>
-    public ServiceBuilder(XElement serviceElement)
-    {
-        _serviceElement = serviceElement ?? throw new ArgumentNullException(nameof(serviceElement));
-    }
 
     /// <summary>
     /// Builds the WsdlService object.
@@ -52,22 +45,17 @@ public class ServiceBuilder
 /// <summary>
 /// Builder for creating WsdlPort objects from XML.
 /// </summary>
-public class ServicePortBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="ServicePortBuilder"/> class.
+/// </remarks>
+/// <param name="portElement">The XML element containing the port.</param>
+/// <exception cref="ArgumentNullException">Thrown when portElement is null.</exception>
+public class ServicePortBuilder(XElement portElement)
 {
-    private readonly XElement _portElement;
+    private readonly XElement _portElement = portElement ?? throw new ArgumentNullException(nameof(portElement));
     private readonly WsdlPort _port = new();
     private const string SoapNamespace = "http://schemas.xmlsoap.org/wsdl/soap/";
     private const string Soap12Namespace = "http://schemas.xmlsoap.org/wsdl/soap12/";
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ServicePortBuilder"/> class.
-    /// </summary>
-    /// <param name="portElement">The XML element containing the port.</param>
-    /// <exception cref="ArgumentNullException">Thrown when portElement is null.</exception>
-    public ServicePortBuilder(XElement portElement)
-    {
-        _portElement = portElement ?? throw new ArgumentNullException(nameof(portElement));
-    }
 
     /// <summary>
     /// Builds the WsdlPort object.

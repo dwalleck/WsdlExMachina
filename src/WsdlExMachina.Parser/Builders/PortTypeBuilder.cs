@@ -7,20 +7,15 @@ namespace WsdlExMachina.Parser.Builders;
 /// <summary>
 /// Builder for creating WsdlPortType objects from XML.
 /// </summary>
-public class PortTypeBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="PortTypeBuilder"/> class.
+/// </remarks>
+/// <param name="portTypeElement">The XML element containing the port type.</param>
+/// <exception cref="ArgumentNullException">Thrown when portTypeElement is null.</exception>
+public class PortTypeBuilder(XElement portTypeElement)
 {
-    private readonly XElement _portTypeElement;
+    private readonly XElement _portTypeElement = portTypeElement ?? throw new ArgumentNullException(nameof(portTypeElement));
     private readonly WsdlPortType _portType = new();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PortTypeBuilder"/> class.
-    /// </summary>
-    /// <param name="portTypeElement">The XML element containing the port type.</param>
-    /// <exception cref="ArgumentNullException">Thrown when portTypeElement is null.</exception>
-    public PortTypeBuilder(XElement portTypeElement)
-    {
-        _portTypeElement = portTypeElement ?? throw new ArgumentNullException(nameof(portTypeElement));
-    }
 
     /// <summary>
     /// Builds the WsdlPortType object.
@@ -43,20 +38,15 @@ public class PortTypeBuilder
 /// <summary>
 /// Builder for creating WsdlOperation objects from XML.
 /// </summary>
-public class OperationBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="OperationBuilder"/> class.
+/// </remarks>
+/// <param name="operationElement">The XML element containing the operation.</param>
+/// <exception cref="ArgumentNullException">Thrown when operationElement is null.</exception>
+public class OperationBuilder(XElement operationElement)
 {
-    private readonly XElement _operationElement;
+    private readonly XElement _operationElement = operationElement ?? throw new ArgumentNullException(nameof(operationElement));
     private readonly WsdlOperation _operation = new();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OperationBuilder"/> class.
-    /// </summary>
-    /// <param name="operationElement">The XML element containing the operation.</param>
-    /// <exception cref="ArgumentNullException">Thrown when operationElement is null.</exception>
-    public OperationBuilder(XElement operationElement)
-    {
-        _operationElement = operationElement ?? throw new ArgumentNullException(nameof(operationElement));
-    }
 
     /// <summary>
     /// Builds the WsdlOperation object.
@@ -100,20 +90,15 @@ public class OperationBuilder
 /// <summary>
 /// Builder for creating WsdlOperationMessage objects from XML.
 /// </summary>
-public class OperationMessageBuilder
+/// <remarks>
+/// Initializes a new instance of the <see cref="OperationMessageBuilder"/> class.
+/// </remarks>
+/// <param name="messageElement">The XML element containing the message.</param>
+/// <exception cref="ArgumentNullException">Thrown when messageElement is null.</exception>
+public class OperationMessageBuilder(XElement messageElement)
 {
-    private readonly XElement _messageElement;
+    private readonly XElement _messageElement = messageElement ?? throw new ArgumentNullException(nameof(messageElement));
     private readonly WsdlOperationMessage _message = new();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OperationMessageBuilder"/> class.
-    /// </summary>
-    /// <param name="messageElement">The XML element containing the message.</param>
-    /// <exception cref="ArgumentNullException">Thrown when messageElement is null.</exception>
-    public OperationMessageBuilder(XElement messageElement)
-    {
-        _messageElement = messageElement ?? throw new ArgumentNullException(nameof(messageElement));
-    }
 
     /// <summary>
     /// Builds the WsdlOperationMessage object.
