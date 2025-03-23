@@ -18,25 +18,25 @@ public class WsdlDefinition
     /// <summary>
     /// Gets or sets the collection of messages defined in the WSDL.
     /// </summary>
-    public List<WsdlMessage> Messages { get; set; } = new();
+    public List<WsdlMessage> Messages { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the collection of port types defined in the WSDL.
     /// </summary>
-    public List<WsdlPortType> PortTypes { get; set; } = new();
+    public List<WsdlPortType> PortTypes { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the collection of bindings defined in the WSDL.
     /// </summary>
-    public List<WsdlBinding> Bindings { get; set; } = new();
+    public List<WsdlBinding> Bindings { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the collection of services defined in the WSDL.
     /// </summary>
-    public List<WsdlService> Services { get; set; } = new();
+    public List<WsdlService> Services { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the collection of XML namespace declarations.
     /// </summary>
-    public Dictionary<string, string> Namespaces { get; set; } = new();
+    public Dictionary<string, string> Namespaces { get; set; } = [];
 }

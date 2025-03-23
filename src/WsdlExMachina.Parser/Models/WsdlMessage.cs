@@ -13,7 +13,7 @@ public class WsdlMessage
     /// <summary>
     /// Gets or sets the collection of parts contained in the message.
     /// </summary>
-    public List<WsdlMessagePart> Parts { get; set; } = new();
+    public List<WsdlMessagePart> Parts { get; set; } = [];
 }
 
 /// <summary>

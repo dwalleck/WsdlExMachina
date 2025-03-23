@@ -13,7 +13,7 @@ public class WsdlPortType
     /// <summary>
     /// Gets or sets the collection of operations contained in the port type.
     /// </summary>
-    public List<WsdlOperation> Operations { get; set; } = new();
+    public List<WsdlOperation> Operations { get; set; } = [];
 }
 
 /// <summary>
@@ -39,7 +39,7 @@ public class WsdlOperation
     /// <summary>
     /// Gets or sets the collection of fault messages for the operation.
     /// </summary>
-    public List<WsdlOperationMessage> Faults { get; set; } = new();
+    public List<WsdlOperationMessage> Faults { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the documentation for the operation.

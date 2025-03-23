@@ -10,22 +10,22 @@ public class WsdlTypes
     /// <summary>
     /// Gets or sets the collection of XML schemas defined in the types section.
     /// </summary>
-    public List<XmlSchema> Schemas { get; set; } = new();
+    public List<XmlSchema> Schemas { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the collection of complex types defined in the schemas.
     /// </summary>
-    public List<WsdlComplexType> ComplexTypes { get; set; } = new();
+    public List<WsdlComplexType> ComplexTypes { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the collection of simple types defined in the schemas.
     /// </summary>
-    public List<WsdlSimpleType> SimpleTypes { get; set; } = new();
+    public List<WsdlSimpleType> SimpleTypes { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the collection of elements defined in the schemas.
     /// </summary>
-    public List<WsdlElement> Elements { get; set; } = new();
+    public List<WsdlElement> Elements { get; set; } = [];
 }
 
 /// <summary>
@@ -46,7 +46,7 @@ public class WsdlComplexType
     /// <summary>
     /// Gets or sets the collection of elements contained in the complex type.
     /// </summary>
-    public List<WsdlElement> Elements { get; set; } = new();
+    public List<WsdlElement> Elements { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the base type if this complex type extends another type.
@@ -87,7 +87,7 @@ public class WsdlSimpleType
     /// <summary>
     /// Gets or sets the collection of enumeration values if this is an enumeration type.
     /// </summary>
-    public List<string> EnumerationValues { get; set; } = new();
+    public List<string> EnumerationValues { get; set; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether this simple type is an enumeration.

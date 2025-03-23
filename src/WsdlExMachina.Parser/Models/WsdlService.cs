@@ -18,7 +18,7 @@ public class WsdlService
     /// <summary>
     /// Gets or sets the collection of ports contained in the service.
     /// </summary>
-    public List<WsdlPort> Ports { get; set; } = new();
+    public List<WsdlPort> Ports { get; set; } = [];
 }
 
 /// <summary>

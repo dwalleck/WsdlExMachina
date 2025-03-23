@@ -38,7 +38,7 @@ public class WsdlBinding
     /// <summary>
     /// Gets or sets the collection of operations contained in the binding.
     /// </summary>
-    public List<WsdlBindingOperation> Operations { get; set; } = new();
+    public List<WsdlBindingOperation> Operations { get; set; } = [];
 }
 
 /// <summary>
@@ -74,7 +74,7 @@ public class WsdlBindingOperation
     /// <summary>
     /// Gets or sets the collection of fault bindings for the operation.
     /// </summary>
-    public List<WsdlBindingOperationMessage> Faults { get; set; } = new();
+    public List<WsdlBindingOperationMessage> Faults { get; set; } = [];
 }
 
 /// <summary>
@@ -105,7 +105,7 @@ public class WsdlBindingOperationMessage
     /// <summary>
     /// Gets or sets the collection of header bindings for the message.
     /// </summary>
-    public List<WsdlBindingOperationMessageHeader> Headers { get; set; } = new();
+    public List<WsdlBindingOperationMessageHeader> Headers { get; set; } = [];
 }
 
 /// <summary>
