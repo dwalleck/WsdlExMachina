@@ -3,44 +3,62 @@ using WsdlExMachina.Parser.Models;
 
 namespace WsdlExMachina.CSharpGenerator;
 
-/// <summary>
-/// Generates C# code from WSDL definitions.
-/// </summary>
-public class CSharpGenerator
-{
-    private readonly RoslynGeneratorFacade _generator;
-    private readonly TypeMapper _typeMapper;
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="CSharpGenerator"/> class.
+    /// Generates C# code from WSDL definitions.
     /// </summary>
-    public CSharpGenerator()
+    public class CSharpGenerator
     {
-        _generator = new RoslynGeneratorFacade();
-        _typeMapper = new TypeMapper();
-    }
+        private readonly RoslynGeneratorFacade _generator;
+        private readonly TypeMapper _typeMapper;
 
-    /// <summary>
-    /// Generates C# code from a WSDL definition.
-    /// </summary>
-    /// <param name="wsdl">The WSDL definition.</param>
-    /// <returns>A <see cref="GeneratedCodeResult"/> containing the generated code.</returns>
-    public GeneratedCodeResult Generate(WsdlDefinition wsdl)
-    {
-        var result = new GeneratedCodeResult();
-
-        // Extract namespace from WSDL target namespace
-        string namespaceName = _typeMapper.GetCSharpNamespace(wsdl.TargetNamespace);
-
-        // Generate all types at once
-        var generatedCode = _generator.GenerateAll(wsdl, namespaceName);
-        foreach (KeyValuePair<string, string> entry in generatedCode)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CSharpGenerator"/> class.
+        /// </summary>
+        public CSharpGenerator()
         {
-            result.Files.Add(entry.Key, entry.Value);
+            _generator = new RoslynGeneratorFacade();
+            _typeMapper = new TypeMapper();
         }
 
-        return result;
-    }
+        /// <summary>
+        /// Generates C# code from a WSDL definition.
+        /// </summary>
+        /// <param name="wsdl">The WSDL definition.</param>
+        /// <returns>A <see cref="GeneratedCodeResult"/> containing the generated code.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="wsdl"/> is null.</exception>
+        /// <exception cref="CodeGenerationException">Thrown when an error occurs during code generation.</exception>
+        public GeneratedCodeResult Generate(WsdlDefinition wsdl)
+        {
+            ArgumentNullException.ThrowIfNull(wsdl);
+
+            try
+            {
+                var result = new GeneratedCodeResult();
+
+                // Extract namespace from WSDL target namespace
+                string namespaceName = string.IsNullOrEmpty(wsdl.TargetNamespace)
+                    ? "DefaultNamespace"
+                    : _typeMapper.GetCSharpNamespace(wsdl.TargetNamespace);
+
+                // Generate all types at once
+                var generatedCode = _generator.GenerateAll(wsdl, namespaceName);
+                foreach (KeyValuePair<string, string> entry in generatedCode)
+                {
+                    result.Files.Add(entry.Key, entry.Value);
+                }
+
+                return result;
+            }
+            catch (CodeGenerationException)
+            {
+                // Re-throw CodeGenerationException as is
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new CodeGenerationException("Failed to generate code.", ex);
+            }
+        }
 
     /// <summary>
     /// Generates a summary of the generated code.

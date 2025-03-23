@@ -158,7 +158,14 @@ namespace WsdlExMachina.CSharpGenerator
             }
 
             // Add class to namespace
-            namespaceDeclaration = namespaceDeclaration.AddMembers(classDeclaration);
+            if (namespaceDeclaration is FileScopedNamespaceDeclarationSyntax fileScopedNamespace)
+            {
+                namespaceDeclaration = fileScopedNamespace.AddMembers(classDeclaration);
+            }
+            else if (namespaceDeclaration is NamespaceDeclarationSyntax regularNamespace)
+            {
+                namespaceDeclaration = regularNamespace.AddMembers(classDeclaration);
+            }
 
             // Create compilation unit with using directives
             var compilationUnit = SyntaxFactory.CompilationUnit()

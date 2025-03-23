@@ -4,8 +4,10 @@
 ## Get latest from `dotnet new gitignore`
 test-output*
 client*
+generated-code*
 # dotenv files
 .env
+
 
 # User-specific files
 *.rsuser

@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Linq;
 using WsdlExMachina.Parser.Models;
 
@@ -17,15 +20,24 @@ public class WsdlDefinitionBuilder
     /// </summary>
     /// <param name="document">The XML document containing the WSDL.</param>
     /// <exception cref="ArgumentNullException">Thrown when document is null.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the document is not a valid WSDL document.</exception>
+    /// <exception cref="WsdlParserException">Thrown when the document is not a valid WSDL document.</exception>
     public WsdlDefinitionBuilder(XDocument document)
     {
-        _document = document ?? throw new ArgumentNullException(nameof(document));
-        _definitionsElement = document.Root ?? throw new InvalidOperationException("The XML document has no root element.");
+        ArgumentNullException.ThrowIfNull(document);
+        _document = document;
 
-        if (_definitionsElement.Name.LocalName != "definitions")
+        try
         {
-            throw new InvalidOperationException("The XML document is not a valid WSDL document. Root element must be 'definitions'.");
+            _definitionsElement = document.Root ?? throw new WsdlParserException("The XML document has no root element.");
+
+            if (_definitionsElement.Name.LocalName != "definitions")
+            {
+                throw new WsdlParserException($"The XML document is not a valid WSDL document. Root element must be 'definitions', but found '{_definitionsElement.Name.LocalName}'.");
+            }
+        }
+        catch (Exception ex) when (ex is not WsdlParserException && ex is not ArgumentNullException)
+        {
+            throw new WsdlParserException("Error initializing WSDL definition builder.", ex);
         }
     }
 
@@ -42,81 +54,172 @@ public class WsdlDefinitionBuilder
     /// Sets the basic properties of the WsdlDefinition.
     /// </summary>
     /// <returns>This builder instance for method chaining.</returns>
+    /// <exception cref="WsdlParserException">Thrown when an error occurs during parsing.</exception>
     public WsdlDefinitionBuilder WithBasicProperties()
     {
-        _definition.TargetNamespace = _definitionsElement.Attribute("targetNamespace")?.Value ?? string.Empty;
-        _definition.Namespaces = GetNamespaces(_definitionsElement);
-        return this;
+        try
+        {
+            _definition.TargetNamespace = _definitionsElement.Attribute("targetNamespace")?.Value ?? string.Empty;
+            _definition.Namespaces = GetNamespaces(_definitionsElement);
+            return this;
+        }
+        catch (Exception ex) when (ex is not WsdlParserException)
+        {
+            throw new WsdlParserException("Error parsing basic WSDL properties.", ex);
+        }
     }
 
     /// <summary>
     /// Adds types to the WsdlDefinition.
     /// </summary>
     /// <returns>This builder instance for method chaining.</returns>
+    /// <exception cref="WsdlParserException">Thrown when an error occurs during parsing.</exception>
     public WsdlDefinitionBuilder WithTypes()
     {
-        var typesElement = _definitionsElement.Elements().FirstOrDefault(e => e.Name.LocalName == "types");
-        if (typesElement != null)
+        try
         {
-            _definition.Types = new TypesBuilder(typesElement).Build();
+            var typesElement = _definitionsElement.Elements().FirstOrDefault(e => e.Name.LocalName == "types");
+            if (typesElement != null)
+            {
+                try
+                {
+                    _definition.Types = new TypesBuilder(typesElement).Build();
+                }
+                catch (Exception ex)
+                {
+                    throw new WsdlParserException($"Error parsing types element: {ex.Message}", ex);
+                }
+            }
+            else
+            {
+                _definition.Types = new WsdlTypes(); // Initialize with empty types instead of null
+            }
+            return this;
         }
-        else
+        catch (WsdlParserException)
         {
-            _definition.Types = null;
+            throw; // Re-throw WsdlParserException as is
         }
-        return this;
+        catch (Exception ex)
+        {
+            throw new WsdlParserException("Error parsing WSDL types.", ex);
+        }
     }
 
     /// <summary>
     /// Adds messages to the WsdlDefinition.
     /// </summary>
     /// <returns>This builder instance for method chaining.</returns>
+    /// <exception cref="WsdlParserException">Thrown when an error occurs during parsing.</exception>
     public WsdlDefinitionBuilder WithMessages()
     {
-        foreach (var messageElement in _definitionsElement.Elements().Where(e => e.Name.LocalName == "message"))
+        try
         {
-            _definition.Messages.Add(new MessageBuilder(messageElement).Build());
+            foreach (var messageElement in _definitionsElement.Elements().Where(e => e.Name.LocalName == "message"))
+            {
+                try
+                {
+                    _definition.Messages.Add(new MessageBuilder(messageElement).Build());
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but continue processing other messages
+                    Console.Error.WriteLine($"Error parsing message element: {ex.Message}");
+                }
+            }
+            return this;
         }
-        return this;
+        catch (Exception ex) when (ex is not WsdlParserException)
+        {
+            throw new WsdlParserException("Error parsing WSDL messages.", ex);
+        }
     }
 
     /// <summary>
     /// Adds port types to the WsdlDefinition.
     /// </summary>
     /// <returns>This builder instance for method chaining.</returns>
+    /// <exception cref="WsdlParserException">Thrown when an error occurs during parsing.</exception>
     public WsdlDefinitionBuilder WithPortTypes()
     {
-        foreach (var portTypeElement in _definitionsElement.Elements().Where(e => e.Name.LocalName == "portType"))
+        try
         {
-            _definition.PortTypes.Add(new PortTypeBuilder(portTypeElement).Build());
+            foreach (var portTypeElement in _definitionsElement.Elements().Where(e => e.Name.LocalName == "portType"))
+            {
+                try
+                {
+                    _definition.PortTypes.Add(new PortTypeBuilder(portTypeElement).Build());
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but continue processing other port types
+                    Console.Error.WriteLine($"Error parsing portType element: {ex.Message}");
+                }
+            }
+            return this;
         }
-        return this;
+        catch (Exception ex) when (ex is not WsdlParserException)
+        {
+            throw new WsdlParserException("Error parsing WSDL port types.", ex);
+        }
     }
 
     /// <summary>
     /// Adds bindings to the WsdlDefinition.
     /// </summary>
     /// <returns>This builder instance for method chaining.</returns>
+    /// <exception cref="WsdlParserException">Thrown when an error occurs during parsing.</exception>
     public WsdlDefinitionBuilder WithBindings()
     {
-        foreach (var bindingElement in _definitionsElement.Elements().Where(e => e.Name.LocalName == "binding"))
+        try
         {
-            _definition.Bindings.Add(new BindingBuilder(bindingElement).Build());
+            foreach (var bindingElement in _definitionsElement.Elements().Where(e => e.Name.LocalName == "binding"))
+            {
+                try
+                {
+                    _definition.Bindings.Add(new BindingBuilder(bindingElement).Build());
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but continue processing other bindings
+                    Console.Error.WriteLine($"Error parsing binding element: {ex.Message}");
+                }
+            }
+            return this;
         }
-        return this;
+        catch (Exception ex) when (ex is not WsdlParserException)
+        {
+            throw new WsdlParserException("Error parsing WSDL bindings.", ex);
+        }
     }
 
     /// <summary>
     /// Adds services to the WsdlDefinition.
     /// </summary>
     /// <returns>This builder instance for method chaining.</returns>
+    /// <exception cref="WsdlParserException">Thrown when an error occurs during parsing.</exception>
     public WsdlDefinitionBuilder WithServices()
     {
-        foreach (var serviceElement in _definitionsElement.Elements().Where(e => e.Name.LocalName == "service"))
+        try
         {
-            _definition.Services.Add(new ServiceBuilder(serviceElement).Build());
+            foreach (var serviceElement in _definitionsElement.Elements().Where(e => e.Name.LocalName == "service"))
+            {
+                try
+                {
+                    _definition.Services.Add(new ServiceBuilder(serviceElement).Build());
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but continue processing other services
+                    Console.Error.WriteLine($"Error parsing service element: {ex.Message}");
+                }
+            }
+            return this;
         }
-        return this;
+        catch (Exception ex) when (ex is not WsdlParserException)
+        {
+            throw new WsdlParserException("Error parsing WSDL services.", ex);
+        }
     }
 
     /// <summary>

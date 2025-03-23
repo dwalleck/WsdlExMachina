@@ -30,15 +30,15 @@ namespace WsdlExMachina.CSharpGenerator
         }
 
         /// <summary>
-        /// Creates a namespace declaration with using directives stored for later use.
+        /// Creates a file-scoped namespace declaration with using directives stored for later use.
         /// </summary>
         /// <param name="namespaceName">The namespace name.</param>
         /// <param name="usingDirectives">The using directives.</param>
         /// <returns>A namespace declaration syntax with using directives stored as annotations.</returns>
-        public NamespaceDeclarationSyntax CreateNamespace(string namespaceName, params string[] usingDirectives)
+        public BaseNamespaceDeclarationSyntax CreateNamespace(string namespaceName, params string[] usingDirectives)
         {
-            // Create regular namespace declaration
-            var namespaceDeclaration = SyntaxFactory.NamespaceDeclaration(
+            // Create file-scoped namespace declaration (C# 10 style)
+            var namespaceDeclaration = SyntaxFactory.FileScopedNamespaceDeclaration(
                 SyntaxFactory.ParseName(namespaceName));
 
             // Store the using directives in a property that can be accessed later
@@ -53,7 +53,7 @@ namespace WsdlExMachina.CSharpGenerator
         /// </summary>
         /// <param name="namespaceDeclaration">The namespace declaration.</param>
         /// <returns>A list of using directive syntax nodes.</returns>
-        public List<UsingDirectiveSyntax> GetUsingDirectives(NamespaceDeclarationSyntax namespaceDeclaration)
+        public List<UsingDirectiveSyntax> GetUsingDirectives(BaseNamespaceDeclarationSyntax namespaceDeclaration)
         {
             var usingDirectives = new List<UsingDirectiveSyntax>();
             var annotation = namespaceDeclaration.GetAnnotations("UsingDirectives").FirstOrDefault();

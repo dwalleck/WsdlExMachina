@@ -63,7 +63,7 @@ namespace WsdlExMachina.CSharpGenerator.Tests
             var result = _generator.GenerateEnum(simpleType, namespaceName);
 
             // Assert
-            var namespaceDeclaration = result.Members.OfType<NamespaceDeclarationSyntax>().First();
+            var namespaceDeclaration = result.Members.OfType<FileScopedNamespaceDeclarationSyntax>().First();
             var enumDeclaration = namespaceDeclaration.Members.OfType<EnumDeclarationSyntax>().First();
 
             Assert.Equal(simpleType.Name, enumDeclaration.Identifier.Text);
@@ -80,7 +80,7 @@ namespace WsdlExMachina.CSharpGenerator.Tests
             var result = _generator.GenerateEnum(simpleType, namespaceName);
 
             // Assert
-            var namespaceDeclaration = result.Members.OfType<NamespaceDeclarationSyntax>().First();
+            var namespaceDeclaration = result.Members.OfType<FileScopedNamespaceDeclarationSyntax>().First();
             var enumDeclaration = namespaceDeclaration.Members.OfType<EnumDeclarationSyntax>().First();
             var xmlTypeAttribute = enumDeclaration.AttributeLists
                 .SelectMany(al => al.Attributes)
@@ -110,7 +110,7 @@ namespace WsdlExMachina.CSharpGenerator.Tests
             var result = _generator.GenerateEnum(simpleType, namespaceName);
 
             // Assert
-            var namespaceDeclaration = result.Members.OfType<NamespaceDeclarationSyntax>().First();
+            var namespaceDeclaration = result.Members.OfType<FileScopedNamespaceDeclarationSyntax>().First();
             var enumDeclaration = namespaceDeclaration.Members.OfType<EnumDeclarationSyntax>().First();
             var enumMembers = enumDeclaration.Members;
 

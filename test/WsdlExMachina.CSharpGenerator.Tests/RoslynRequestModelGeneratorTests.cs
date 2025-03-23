@@ -79,7 +79,7 @@ namespace WsdlExMachina.CSharpGenerator.Tests
             var result = _generator.GenerateRequestModel(wsdl, message, operationName, namespaceName);
 
             // Assert
-            var namespaceDeclaration = result.Members.OfType<NamespaceDeclarationSyntax>().First();
+            var namespaceDeclaration = result.Members.OfType<FileScopedNamespaceDeclarationSyntax>().First();
             var classDeclaration = namespaceDeclaration.Members.OfType<ClassDeclarationSyntax>().First();
 
             Assert.Equal(operationName + "Request", classDeclaration.Identifier.Text);
@@ -98,7 +98,7 @@ namespace WsdlExMachina.CSharpGenerator.Tests
             var result = _generator.GenerateRequestModel(wsdl, message, operationName, namespaceName);
 
             // Assert
-            var namespaceDeclaration = result.Members.OfType<NamespaceDeclarationSyntax>().First();
+            var namespaceDeclaration = result.Members.OfType<FileScopedNamespaceDeclarationSyntax>().First();
             var classDeclaration = namespaceDeclaration.Members.OfType<ClassDeclarationSyntax>().First();
             var xmlRootAttribute = classDeclaration.AttributeLists
                 .SelectMany(al => al.Attributes)
@@ -141,7 +141,7 @@ namespace WsdlExMachina.CSharpGenerator.Tests
             var result = _generator.GenerateRequestModel(wsdl, message, operationName, namespaceName);
 
             // Assert
-            var namespaceDeclaration = result.Members.OfType<NamespaceDeclarationSyntax>().First();
+            var namespaceDeclaration = result.Members.OfType<FileScopedNamespaceDeclarationSyntax>().First();
             var classDeclaration = namespaceDeclaration.Members.OfType<ClassDeclarationSyntax>().First();
             var properties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>().ToList();
 
@@ -194,7 +194,7 @@ namespace WsdlExMachina.CSharpGenerator.Tests
             var result = _generator.GenerateRequestModel(wsdl, message, operationName, namespaceName);
 
             // Assert
-            var namespaceDeclaration = result.Members.OfType<NamespaceDeclarationSyntax>().First();
+            var namespaceDeclaration = result.Members.OfType<FileScopedNamespaceDeclarationSyntax>().First();
             var classDeclaration = namespaceDeclaration.Members.OfType<ClassDeclarationSyntax>().First();
             var properties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>().ToList();
 
@@ -249,7 +249,7 @@ namespace WsdlExMachina.CSharpGenerator.Tests
             var result = _generator.GenerateRequestModel(wsdl, message, operationName, namespaceName);
 
             // Assert
-            var namespaceDeclaration = result.Members.OfType<NamespaceDeclarationSyntax>().First();
+            var namespaceDeclaration = result.Members.OfType<FileScopedNamespaceDeclarationSyntax>().First();
             var classDeclaration = namespaceDeclaration.Members.OfType<ClassDeclarationSyntax>().First();
             var properties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>().ToList();
 

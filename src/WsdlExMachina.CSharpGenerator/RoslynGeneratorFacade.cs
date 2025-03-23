@@ -31,15 +31,23 @@ namespace WsdlExMachina.CSharpGenerator
         /// <param name="wsdl">The WSDL definition.</param>
         /// <param name="namespaceName">The namespace name.</param>
         /// <returns>A dictionary of file names to generated code.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="wsdl"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="namespaceName"/> is null or empty.</exception>
         public Dictionary<string, string> GenerateRequestModels(WsdlDefinition wsdl, string namespaceName)
         {
-            if (wsdl == null)
-                throw new ArgumentNullException(nameof(wsdl));
+            ArgumentNullException.ThrowIfNull(wsdl);
 
             if (string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentException("Namespace name cannot be null or empty.", nameof(namespaceName));
 
-            return _requestModelGenerator.GenerateRequestModels(wsdl, namespaceName);
+            try
+            {
+                return _requestModelGenerator.GenerateRequestModels(wsdl, namespaceName);
+            }
+            catch (Exception ex)
+            {
+                throw new CodeGenerationException("Failed to generate request models.", ex);
+            }
         }
 
         /// <summary>
@@ -48,15 +56,24 @@ namespace WsdlExMachina.CSharpGenerator
         /// <param name="wsdl">The WSDL definition.</param>
         /// <param name="namespaceName">The namespace name.</param>
         /// <returns>A dictionary of file names to generated code.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="wsdl"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="namespaceName"/> is null or empty.</exception>
+        /// <exception cref="CodeGenerationException">Thrown when an error occurs during code generation.</exception>
         public Dictionary<string, string> GenerateComplexTypes(WsdlDefinition wsdl, string namespaceName)
         {
-            if (wsdl == null)
-                throw new ArgumentNullException(nameof(wsdl));
+            ArgumentNullException.ThrowIfNull(wsdl);
 
             if (string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentException("Namespace name cannot be null or empty.", nameof(namespaceName));
 
-            return _complexTypeGenerator.GenerateComplexTypes(wsdl, namespaceName);
+            try
+            {
+                return _complexTypeGenerator.GenerateComplexTypes(wsdl, namespaceName);
+            }
+            catch (Exception ex)
+            {
+                throw new CodeGenerationException("Failed to generate complex types.", ex);
+            }
         }
 
         /// <summary>
@@ -65,27 +82,62 @@ namespace WsdlExMachina.CSharpGenerator
         /// <param name="wsdl">The WSDL definition.</param>
         /// <param name="namespaceName">The namespace name.</param>
         /// <returns>A dictionary of file names to generated code.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="wsdl"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="namespaceName"/> is null or empty.</exception>
+        /// <exception cref="CodeGenerationException">Thrown when an error occurs during code generation.</exception>
         public Dictionary<string, string> GenerateSimpleTypes(WsdlDefinition wsdl, string namespaceName)
         {
-            if (wsdl == null)
-                throw new ArgumentNullException(nameof(wsdl));
+            ArgumentNullException.ThrowIfNull(wsdl);
 
             if (string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentException("Namespace name cannot be null or empty.", nameof(namespaceName));
 
-            var result = new Dictionary<string, string>();
-
-            foreach (var simpleType in wsdl.Types.SimpleTypes)
+            try
             {
-                // Only generate enums for simple types that are enumerations
-                if (simpleType.IsEnum)
-                {
-                    var enumCode = _enumGenerator.GenerateEnumCode(simpleType, namespaceName);
-                    result[$"{simpleType.Name}.cs"] = enumCode;
-                }
-            }
+                var result = new Dictionary<string, string>();
 
-            return result;
+                // Check if Types is null
+                if (wsdl.Types == null)
+                {
+                    return result;
+                }
+
+                // Check if SimpleTypes is null
+                if (wsdl.Types.SimpleTypes == null)
+                {
+                    return result;
+                }
+
+                foreach (var simpleType in wsdl.Types.SimpleTypes)
+                {
+                    // Skip null simple types
+                    if (simpleType == null)
+                    {
+                        continue;
+                    }
+
+                    // Only generate enums for simple types that are enumerations
+                    if (simpleType.IsEnum)
+                    {
+                        try
+                        {
+                            var enumCode = _enumGenerator.GenerateEnumCode(simpleType, namespaceName);
+                            result[$"{simpleType.Name}.cs"] = enumCode;
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log the error but continue processing other simple types
+                            Console.Error.WriteLine($"Error generating enum for {simpleType.Name}: {ex.Message}");
+                        }
+                    }
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new CodeGenerationException("Failed to generate simple types.", ex);
+            }
         }
 
         /// <summary>
@@ -94,38 +146,88 @@ namespace WsdlExMachina.CSharpGenerator
         /// <param name="wsdl">The WSDL definition.</param>
         /// <param name="namespaceName">The namespace name.</param>
         /// <returns>A dictionary of file names to generated code.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="wsdl"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="namespaceName"/> is null or empty.</exception>
+        /// <exception cref="CodeGenerationException">Thrown when an error occurs during code generation.</exception>
         public Dictionary<string, string> GenerateAll(WsdlDefinition wsdl, string namespaceName)
         {
-            if (wsdl == null)
-                throw new ArgumentNullException(nameof(wsdl));
+            ArgumentNullException.ThrowIfNull(wsdl);
 
             if (string.IsNullOrEmpty(namespaceName))
                 throw new ArgumentException("Namespace name cannot be null or empty.", nameof(namespaceName));
 
-            var result = new Dictionary<string, string>();
-
-            // Generate simple types (enums)
-            var simpleTypes = GenerateSimpleTypes(wsdl, namespaceName);
-            foreach (var (fileName, code) in simpleTypes)
+            try
             {
-                result[fileName] = code;
-            }
+                var result = new Dictionary<string, string>();
+                var errors = new List<Exception>();
 
-            // Generate complex types
-            var complexTypes = GenerateComplexTypes(wsdl, namespaceName);
-            foreach (var (fileName, code) in complexTypes)
+                // Generate simple types (enums)
+                try
+                {
+                    var simpleTypes = GenerateSimpleTypes(wsdl, namespaceName);
+                    foreach (var (fileName, code) in simpleTypes)
+                    {
+                        result[fileName] = code;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(ex);
+                    Console.Error.WriteLine($"Error generating simple types: {ex.Message}");
+                }
+
+                // Generate complex types
+                try
+                {
+                    var complexTypes = GenerateComplexTypes(wsdl, namespaceName);
+                    foreach (var (fileName, code) in complexTypes)
+                    {
+                        result[fileName] = code;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(ex);
+                    Console.Error.WriteLine($"Error generating complex types: {ex.Message}");
+                }
+
+                // Generate request models
+                try
+                {
+                    var requestModels = GenerateRequestModels(wsdl, namespaceName);
+                    foreach (var (fileName, code) in requestModels)
+                    {
+                        result[fileName] = code;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(ex);
+                    Console.Error.WriteLine($"Error generating request models: {ex.Message}");
+                }
+
+                // If there were errors but we still generated some code, log a warning
+                if (errors.Count > 0 && result.Count > 0)
+                {
+                    Console.Error.WriteLine($"Generated {result.Count} files with {errors.Count} errors.");
+                }
+                // If there were errors and we didn't generate any code, throw an exception
+                else if (errors.Count > 0 && result.Count == 0)
+                {
+                    throw new CodeGenerationException("Failed to generate any code.", errors[0]);
+                }
+
+                return result;
+            }
+            catch (CodeGenerationException)
             {
-                result[fileName] = code;
+                // Re-throw CodeGenerationException as is
+                throw;
             }
-
-            // Generate request models
-            var requestModels = GenerateRequestModels(wsdl, namespaceName);
-            foreach (var (fileName, code) in requestModels)
+            catch (Exception ex)
             {
-                result[fileName] = code;
+                throw new CodeGenerationException("Failed to generate code.", ex);
             }
-
-            return result;
         }
     }
 }

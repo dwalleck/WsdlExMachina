@@ -17,7 +17,7 @@ namespace WsdlExMachina.CSharpGenerator.Tests
         }
 
         [Fact]
-        public void CreateNamespace_ShouldCreateNamespaceWithUsingDirectives()
+        public void CreateNamespace_ShouldCreateFileScopedNamespaceWithUsingDirectives()
         {
             // Arrange
             var namespaceName = "Test.Namespace";
@@ -28,11 +28,15 @@ namespace WsdlExMachina.CSharpGenerator.Tests
 
             // Assert
             Assert.Equal(namespaceName, result.Name.ToString());
-            Assert.Equal(usingDirectives.Length, result.Usings.Count);
+            Assert.IsType<FileScopedNamespaceDeclarationSyntax>(result);
+
+            // Get the using directives from the annotation
+            var retrievedUsingDirectives = _generator.GetUsingDirectives(result);
+            Assert.Equal(usingDirectives.Length, retrievedUsingDirectives.Count);
 
             foreach (var usingDirective in usingDirectives)
             {
-                Assert.Contains(result.Usings, u => u.Name.ToString() == usingDirective);
+                Assert.Contains(retrievedUsingDirectives, u => u.Name.ToString() == usingDirective);
             }
         }
 

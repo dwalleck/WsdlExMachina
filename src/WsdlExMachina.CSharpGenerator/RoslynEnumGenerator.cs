@@ -99,9 +99,16 @@ namespace WsdlExMachina.CSharpGenerator
             enumDeclaration = enumDeclaration.WithLeadingTrivia(documentation);
 
             // Add enum to namespace
-            namespaceDeclaration = namespaceDeclaration.AddMembers(enumDeclaration);
+            if (namespaceDeclaration is FileScopedNamespaceDeclarationSyntax fileScopedNamespace)
+            {
+                namespaceDeclaration = fileScopedNamespace.AddMembers(enumDeclaration);
+            }
+            else if (namespaceDeclaration is NamespaceDeclarationSyntax regularNamespace)
+            {
+                namespaceDeclaration = regularNamespace.AddMembers(enumDeclaration);
+            }
 
-            // Create compilation unit with using directives
+            // Create compilation unit
             return SyntaxFactory.CompilationUnit()
                 .AddUsings(usingDirectives.ToArray())
                 .AddMembers(namespaceDeclaration);
