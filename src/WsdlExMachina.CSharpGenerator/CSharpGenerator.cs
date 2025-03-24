@@ -223,10 +223,32 @@ public class GeneratedCodeResult
             }
 
             // Replace the namespace in SoapClientBase.cs
-            soapClientBaseContent = System.Text.RegularExpressions.Regex.Replace(
-                soapClientBaseContent,
-                @"namespace\s+[^\s{;]+(?:\s*{)?(?:;)?",
-                $"namespace {namespaceName} {{");
+            // Handle both file-scoped namespaces (with semicolons) and block-scoped namespaces (with braces)
+            if (soapClientBaseContent.Contains("namespace"))
+            {
+                // First, determine if it's a file-scoped namespace (with semicolon) or block-scoped namespace (with brace)
+                bool isFileScoped = System.Text.RegularExpressions.Regex.IsMatch(soapClientBaseContent, @"namespace\s+[^\s{;]+\s*;");
+
+                if (isFileScoped)
+                {
+                    // Replace file-scoped namespace with block-scoped namespace
+                    soapClientBaseContent = System.Text.RegularExpressions.Regex.Replace(
+                        soapClientBaseContent,
+                        @"namespace\s+[^\s{;]+\s*;",
+                        $"namespace {namespaceName}\r\n{{");
+
+                    // Add closing brace at the end of the file
+                    soapClientBaseContent = soapClientBaseContent + "\r\n}";
+                }
+                else
+                {
+                    // Replace block-scoped namespace
+                    soapClientBaseContent = System.Text.RegularExpressions.Regex.Replace(
+                        soapClientBaseContent,
+                        @"namespace\s+[^\s{;]+\s*{",
+                        $"namespace {namespaceName} {{");
+                }
+            }
 
             // Write the modified SoapClientBase.cs to the output directory
             var outputPath = Path.Combine(directory, "SoapClientBase.cs");

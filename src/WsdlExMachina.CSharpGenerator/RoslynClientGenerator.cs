@@ -147,7 +147,7 @@ public class RoslynClientGenerator
             ? operation.Name
             : bindingOperation.Input.Name;
         var methodName = $"{operationName}Async";
-        var requestTypeName = $"{operationName}Request";
+        var requestTypeName = $"{operationName}Type";
         var responseTypeName = "ACHTransResponse";
         var soapAction = bindingOperation.SoapAction;
 
@@ -159,11 +159,9 @@ public class RoslynClientGenerator
         sb.AppendLine($"        /// <returns>A task that represents the asynchronous operation. The task result contains the {responseTypeName} response.</returns>");
         sb.AppendLine($"        public async Task<{responseTypeName}> {methodName}({requestTypeName} request)");
         sb.AppendLine("        {");
-        sb.AppendLine("            if (request == null)");
-        sb.AppendLine("                throw new ArgumentNullException(nameof(request));");
-        sb.AppendLine();
+        sb.AppendLine("            ArgumentNullException.ThrowIfNull(request, nameof(request));");
         sb.AppendLine($"            var soapEnvelope = CreateSoapEnvelope(request, \"{soapAction}\");");
-        sb.AppendLine($"            var responseContent = await SendSoapRequestAsync(soapEnvelope, \"{soapAction}\");");
+        sb.AppendLine($"            var responseContent = await SendSoapRequestAsync(soapEnvelope, \"{soapAction}\").ConfigureAwait(false);");
         sb.AppendLine($"            return DeserializeResponse<{responseTypeName}>(responseContent);");
         sb.AppendLine("        }");
         sb.AppendLine();

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -14,6 +14,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WsdlExMachina.CSharpGenerator.Tests", "test\WsdlExMachina.CSharpGenerator.Tests\WsdlExMachina.CSharpGenerator.Tests.csproj", "{E419906E-EB01-4405-A4FF-5EA8AD5936A8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WsdlExMachina.Cli.Generator", "src\WsdlExMachina.Cli.Generator\WsdlExMachina.Cli.Generator.csproj", "{A9CD6898-731D-4D05-B4FC-6E7402CD2EC4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Generated.ACH", "Generated\Generated.ACH.csproj", "{2721AE7D-56EF-4D95-B431-3DD2210B1B0D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,6 +39,10 @@ Global
 		{A9CD6898-731D-4D05-B4FC-6E7402CD2EC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A9CD6898-731D-4D05-B4FC-6E7402CD2EC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A9CD6898-731D-4D05-B4FC-6E7402CD2EC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2721AE7D-56EF-4D95-B431-3DD2210B1B0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2721AE7D-56EF-4D95-B431-3DD2210B1B0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2721AE7D-56EF-4D95-B431-3DD2210B1B0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2721AE7D-56EF-4D95-B431-3DD2210B1B0D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -99,8 +99,8 @@ public class NamingHelper
             return input;
         }
 
-        // Handle camelCase or snake_case
-        var words = Regex.Split(input, @"(?<=[a-z])(?=[A-Z])|[_\-\.]");
+        // Handle camelCase or snake_case, but preserve underscores
+        var words = Regex.Split(input, @"(?<=[a-z])(?=[A-Z])|[\-\.]");
         var result = new StringBuilder();
 
         foreach (var word in words)
