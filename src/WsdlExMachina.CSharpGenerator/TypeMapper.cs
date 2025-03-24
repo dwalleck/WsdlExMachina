@@ -139,7 +139,9 @@ public class TypeMapper
         for (int i = 0; i < segments.Length; i++)
         {
             if (string.IsNullOrEmpty(segments[i]))
+            {
                 continue;
+            }
 
             segments[i] = char.ToUpperInvariant(segments[i][0]) + segments[i][1..];
         }

@@ -227,7 +227,7 @@ public class WsdlDefinitionBuilder
     /// </summary>
     /// <param name="element">The XML element.</param>
     /// <returns>A dictionary of namespace prefixes and URIs.</returns>
-    private Dictionary<string, string> GetNamespaces(XElement element)
+    private static Dictionary<string, string> GetNamespaces(XElement element)
     {
         var namespaces = new Dictionary<string, string>();
         foreach (var attribute in element.Attributes().Where(a => a.IsNamespaceDeclaration))

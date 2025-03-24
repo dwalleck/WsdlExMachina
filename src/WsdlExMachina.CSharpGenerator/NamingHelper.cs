@@ -92,7 +92,7 @@ public class NamingHelper
     /// </summary>
     /// <param name="input">The input string.</param>
     /// <returns>The PascalCase string.</returns>
-    private string ToPascalCase(string input)
+    private static string ToPascalCase(string input)
     {
         if (string.IsNullOrEmpty(input))
         {
@@ -106,7 +106,9 @@ public class NamingHelper
         foreach (var word in words)
         {
             if (string.IsNullOrEmpty(word))
+            {
                 continue;
+            }
 
             result.Append(char.ToUpperInvariant(word[0]));
             if (word.Length > 1)
