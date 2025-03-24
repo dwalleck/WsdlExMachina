@@ -20,25 +20,6 @@
             "stopAtEntry": false
         },
         {
-            "name": "Debug CLI",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/WsdlExMachina.Cli/bin/Debug/net9.0/WsdlExMachina.Cli.dll",
-            "args": [
-                "generate",
-                "--wsdl",
-                "${workspaceFolder}/samples/ACH.wsdl",
-                "--output",
-                "${workspaceFolder}/Generated",
-                "--namespace",
-                "Generated.ACH"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "internalConsole",
-            "stopAtEntry": false
-        },
-        {
             "name": "Debug CSharpGenerator Tests",
             "type": "coreclr",
             "request": "launch",

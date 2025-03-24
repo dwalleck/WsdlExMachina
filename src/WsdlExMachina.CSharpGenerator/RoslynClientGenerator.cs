@@ -108,25 +108,26 @@ public class RoslynClientGenerator
         sb.AppendLine();
 
         // Add methods for each operation
-        foreach (var operation in portType.Operations ?? Enumerable.Empty<WsdlOperation>())
+        //foreach (var operation in portType.Operations ?? Enumerable.Empty<WsdlOperation>())
+        foreach (var operation in binding.Operations ?? Enumerable.Empty<WsdlBindingOperation>())
         {
-            var bindingOperation = binding.Operations?.FirstOrDefault(bo => bo.Name == operation.Name);
-            if (bindingOperation == null)
-            {
-                continue;
-            }
+            var portOperation = portType.Operations?.FirstOrDefault(po => po.Name == operation.Name);
+            // if (bindingOperation == null)
+            // {
+            //     continue;
+            // }
 
             // Get the input and output messages
-            var inputMessage = wsdl.Messages?.FirstOrDefault(m => m.Name == operation.Input?.Message);
-            var outputMessage = wsdl.Messages?.FirstOrDefault(m => m.Name == operation.Output?.Message);
+            // var inputMessage = wsdl.Messages?.FirstOrDefault(m => m.Name == operation.Input?.Message);
+            // var outputMessage = wsdl.Messages?.FirstOrDefault(m => m.Name == operation.Output?.Message);
 
-            if (inputMessage == null || outputMessage == null)
-            {
-                continue;
-            }
+            // if (inputMessage == null || outputMessage == null)
+            // {
+            //     continue;
+            // }
 
             // Generate async method for this operation
-            GenerateAsyncOperationMethod(sb, operation, bindingOperation);
+            GenerateAsyncOperationMethod(sb, portOperation, operation);
         }
 
         // Close class and namespace
@@ -142,7 +143,9 @@ public class RoslynClientGenerator
         WsdlBindingOperation bindingOperation)
     {
         // Always use the operation name for consistency
-        var operationName = operation.Name;
+        var operationName = string.IsNullOrEmpty(bindingOperation.Input?.Name)
+            ? operation.Name
+            : bindingOperation.Input.Name;
         var methodName = $"{operationName}Async";
         var requestTypeName = $"{operationName}Request";
         var responseTypeName = "ACHTransResponse";
@@ -150,7 +153,7 @@ public class RoslynClientGenerator
 
         // Add method declaration
         sb.AppendLine($"        /// <summary>");
-        sb.AppendLine($"        /// Asynchronously calls the {operationName} operation.");
+        sb.AppendLine($"        /// {operation.Documentation}");
         sb.AppendLine($"        /// </summary>");
         sb.AppendLine($"        /// <param name=\"request\">The request object.</param>");
         sb.AppendLine($"        /// <returns>A task that represents the asynchronous operation. The task result contains the {responseTypeName} response.</returns>");
