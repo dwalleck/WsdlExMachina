@@ -11,33 +11,23 @@ namespace WsdlExMachina.CSharpGenerator
     /// <summary>
     /// Generates C# request model classes for WSDL messages using the Roslyn API.
     /// </summary>
-    public class RoslynRequestModelGenerator
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="RoslynRequestModelGenerator"/> class.
+    /// </remarks>
+    /// <param name="codeGenerator">The code generator.</param>
+    /// <param name="complexTypeGenerator">The complex type generator.</param>
+    /// <param name="enumGenerator">The enum generator.</param>
+    public class RoslynRequestModelGenerator(
+        RoslynCodeGenerator codeGenerator,
+        RoslynComplexTypeGenerator complexTypeGenerator,
+        RoslynEnumGenerator enumGenerator)
     {
-        private readonly RoslynCodeGenerator _codeGenerator;
-        private readonly RoslynComplexTypeGenerator _complexTypeGenerator;
-        private readonly RoslynEnumGenerator _enumGenerator;
-        private readonly NamingHelper _namingHelper;
-        private readonly TypeMapper _typeMapper;
-        private readonly Dictionary<string, CompilationUnitSyntax> _generatedTypes;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RoslynRequestModelGenerator"/> class.
-        /// </summary>
-        /// <param name="codeGenerator">The code generator.</param>
-        /// <param name="complexTypeGenerator">The complex type generator.</param>
-        /// <param name="enumGenerator">The enum generator.</param>
-        public RoslynRequestModelGenerator(
-            RoslynCodeGenerator codeGenerator,
-            RoslynComplexTypeGenerator complexTypeGenerator,
-            RoslynEnumGenerator enumGenerator)
-        {
-            _codeGenerator = codeGenerator ?? throw new ArgumentNullException(nameof(codeGenerator));
-            _complexTypeGenerator = complexTypeGenerator ?? throw new ArgumentNullException(nameof(complexTypeGenerator));
-            _enumGenerator = enumGenerator ?? throw new ArgumentNullException(nameof(enumGenerator));
-            _namingHelper = new NamingHelper();
-            _typeMapper = new TypeMapper();
-            _generatedTypes = new Dictionary<string, CompilationUnitSyntax>();
-        }
+        private readonly RoslynCodeGenerator _codeGenerator = codeGenerator ?? throw new ArgumentNullException(nameof(codeGenerator));
+        private readonly RoslynComplexTypeGenerator _complexTypeGenerator = complexTypeGenerator ?? throw new ArgumentNullException(nameof(complexTypeGenerator));
+        private readonly RoslynEnumGenerator _enumGenerator = enumGenerator ?? throw new ArgumentNullException(nameof(enumGenerator));
+        private readonly NamingHelper _namingHelper = new NamingHelper();
+        private readonly TypeMapper _typeMapper = new TypeMapper();
+        private readonly Dictionary<string, CompilationUnitSyntax> _generatedTypes = new Dictionary<string, CompilationUnitSyntax>();
 
         /// <summary>
         /// Generates C# request model classes from a WSDL definition.

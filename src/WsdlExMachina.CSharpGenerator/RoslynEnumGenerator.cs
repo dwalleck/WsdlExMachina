@@ -11,20 +11,14 @@ namespace WsdlExMachina.CSharpGenerator
     /// <summary>
     /// Generates C# enum types using the Roslyn API.
     /// </summary>
-    public class RoslynEnumGenerator
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="RoslynEnumGenerator"/> class.
+    /// </remarks>
+    /// <param name="codeGenerator">The code generator.</param>
+    public class RoslynEnumGenerator(RoslynCodeGenerator codeGenerator)
     {
-        private readonly RoslynCodeGenerator _codeGenerator;
-        private readonly NamingHelper _namingHelper;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RoslynEnumGenerator"/> class.
-        /// </summary>
-        /// <param name="codeGenerator">The code generator.</param>
-        public RoslynEnumGenerator(RoslynCodeGenerator codeGenerator)
-        {
-            _codeGenerator = codeGenerator ?? throw new ArgumentNullException(nameof(codeGenerator));
-            _namingHelper = new NamingHelper();
-        }
+        private readonly RoslynCodeGenerator _codeGenerator = codeGenerator ?? throw new ArgumentNullException(nameof(codeGenerator));
+        private readonly NamingHelper _namingHelper = new NamingHelper();
 
         /// <summary>
         /// Generates a C# enum type from a WSDL simple type.

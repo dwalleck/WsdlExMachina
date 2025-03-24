@@ -13,6 +13,7 @@ namespace WsdlExMachina.CSharpGenerator
         private readonly RoslynEnumGenerator _enumGenerator;
         private readonly RoslynComplexTypeGenerator _complexTypeGenerator;
         private readonly RoslynRequestModelGenerator _requestModelGenerator;
+        private readonly RoslynClientGenerator _clientGenerator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RoslynGeneratorFacade"/> class.
@@ -23,6 +24,7 @@ namespace WsdlExMachina.CSharpGenerator
             _enumGenerator = new RoslynEnumGenerator(_codeGenerator);
             _complexTypeGenerator = new RoslynComplexTypeGenerator(_codeGenerator);
             _requestModelGenerator = new RoslynRequestModelGenerator(_codeGenerator, _complexTypeGenerator, _enumGenerator);
+            _clientGenerator = new RoslynClientGenerator(_codeGenerator);
         }
 
         /// <summary>
@@ -141,6 +143,32 @@ namespace WsdlExMachina.CSharpGenerator
         }
 
         /// <summary>
+        /// Generates C# code for SOAP clients in a WSDL definition.
+        /// </summary>
+        /// <param name="wsdl">The WSDL definition.</param>
+        /// <param name="namespaceName">The namespace name.</param>
+        /// <returns>A dictionary of file names to generated code.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="wsdl"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="namespaceName"/> is null or empty.</exception>
+        /// <exception cref="CodeGenerationException">Thrown when an error occurs during code generation.</exception>
+        public Dictionary<string, string> GenerateClients(WsdlDefinition wsdl, string namespaceName)
+        {
+            ArgumentNullException.ThrowIfNull(wsdl);
+
+            if (string.IsNullOrEmpty(namespaceName))
+                throw new ArgumentException("Namespace name cannot be null or empty.", nameof(namespaceName));
+
+            try
+            {
+                return _clientGenerator.GenerateClient(wsdl, namespaceName);
+            }
+            catch (Exception ex)
+            {
+                throw new CodeGenerationException("Failed to generate SOAP clients.", ex);
+            }
+        }
+
+        /// <summary>
         /// Generates all C# code for a WSDL definition.
         /// </summary>
         /// <param name="wsdl">The WSDL definition.</param>
@@ -204,6 +232,21 @@ namespace WsdlExMachina.CSharpGenerator
                 {
                     errors.Add(ex);
                     Console.Error.WriteLine($"Error generating request models: {ex.Message}");
+                }
+
+                // Generate SOAP clients
+                try
+                {
+                    var clients = GenerateClients(wsdl, namespaceName);
+                    foreach (var (fileName, code) in clients)
+                    {
+                        result[fileName] = code;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(ex);
+                    Console.Error.WriteLine($"Error generating SOAP clients: {ex.Message}");
                 }
 
                 // If there were errors but we still generated some code, log a warning

@@ -11,24 +11,16 @@ namespace WsdlExMachina.CSharpGenerator
     /// <summary>
     /// Generates C# classes for WSDL complex types using the Roslyn API.
     /// </summary>
-    public class RoslynComplexTypeGenerator
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="RoslynComplexTypeGenerator"/> class.
+    /// </remarks>
+    /// <param name="codeGenerator">The code generator.</param>
+    public class RoslynComplexTypeGenerator(RoslynCodeGenerator codeGenerator)
     {
-        private readonly RoslynCodeGenerator _codeGenerator;
-        private readonly NamingHelper _namingHelper;
-        private readonly TypeMapper _typeMapper;
-        private readonly Dictionary<string, CompilationUnitSyntax> _generatedTypes;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RoslynComplexTypeGenerator"/> class.
-        /// </summary>
-        /// <param name="codeGenerator">The code generator.</param>
-        public RoslynComplexTypeGenerator(RoslynCodeGenerator codeGenerator)
-        {
-            _codeGenerator = codeGenerator ?? throw new ArgumentNullException(nameof(codeGenerator));
-            _namingHelper = new NamingHelper();
-            _typeMapper = new TypeMapper();
-            _generatedTypes = new Dictionary<string, CompilationUnitSyntax>();
-        }
+        private readonly RoslynCodeGenerator _codeGenerator = codeGenerator ?? throw new ArgumentNullException(nameof(codeGenerator));
+        private readonly NamingHelper _namingHelper = new NamingHelper();
+        private readonly TypeMapper _typeMapper = new TypeMapper();
+        private readonly Dictionary<string, CompilationUnitSyntax> _generatedTypes = new Dictionary<string, CompilationUnitSyntax>();
 
         /// <summary>
         /// Generates a C# class for a WSDL complex type.
