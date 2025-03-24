@@ -116,7 +116,7 @@ public class RoslynEnumGeneratorTests
 
         Assert.Equal(simpleType.EnumerationValues.Count, enumMembers.Count);
 
-        for (int i = 0; i < simpleType.EnumerationValues.Count; i++)
+        for (var i = 0; i < simpleType.EnumerationValues.Count; i++)
         {
             var expectedValue = simpleType.EnumerationValues[i];
             var member = enumMembers[i];

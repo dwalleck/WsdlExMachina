@@ -136,7 +136,7 @@ public class RoslynComplexTypeGenerator(RoslynCodeGenerator codeGenerator)
             {
                 // Add property for each element
                 var propertyName = _namingHelper.GetSafePropertyName(element.Name);
-                string typeName = GetTypeName(element);
+                var typeName = GetTypeName(element);
 
                 // Create property
                 var property = CreateProperty(

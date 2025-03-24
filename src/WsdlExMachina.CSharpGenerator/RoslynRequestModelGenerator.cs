@@ -173,7 +173,7 @@ public class RoslynRequestModelGenerator(
                         {
                             // Add property for each child element
                             var propertyName = _namingHelper.GetSafePropertyName(childElement.Name);
-                            string typeName = GetTypeName(wsdl, childElement);
+                            var typeName = GetTypeName(wsdl, childElement);
 
                             // Create property
                             var property = CreateProperty(

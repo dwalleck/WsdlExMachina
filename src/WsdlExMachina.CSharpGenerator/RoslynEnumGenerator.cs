@@ -58,7 +58,7 @@ public class RoslynEnumGenerator(RoslynCodeGenerator codeGenerator)
         // Create enum members
         var enumMembers = new List<EnumMemberDeclarationSyntax>();
 
-        for (int i = 0; i < simpleType.EnumerationValues.Count; i++)
+        for (var i = 0; i < simpleType.EnumerationValues.Count; i++)
         {
             var value = simpleType.EnumerationValues[i];
             var enumValueName = _namingHelper.GetSafePropertyName(value);

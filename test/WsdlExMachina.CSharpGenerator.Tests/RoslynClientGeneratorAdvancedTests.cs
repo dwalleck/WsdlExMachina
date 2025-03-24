@@ -611,8 +611,8 @@ public class RoslynClientGeneratorAdvancedTests
 
     private static int CountOccurrences(string source, string searchString)
     {
-        int count = 0;
-        int index = 0;
+        var count = 0;
+        var index = 0;
         while ((index = source.IndexOf(searchString, index, StringComparison.Ordinal)) != -1)
         {
             count++;

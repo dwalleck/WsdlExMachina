@@ -1,0 +1,82 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug CLI Generator",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/WsdlExMachina.Cli.Generator/bin/Debug/net9.0/WsdlExMachina.Cli.Generator.dll",
+            "args": [
+                "--wsdl",
+                "${workspaceFolder}/samples/ACH.wsdl",
+                "--output",
+                "${workspaceFolder}/Generated",
+                "--namespace",
+                "Generated.ACH"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Debug CLI",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/WsdlExMachina.Cli/bin/Debug/net9.0/WsdlExMachina.Cli.dll",
+            "args": [
+                "generate",
+                "--wsdl",
+                "${workspaceFolder}/samples/ACH.wsdl",
+                "--output",
+                "${workspaceFolder}/Generated",
+                "--namespace",
+                "Generated.ACH"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Debug CSharpGenerator Tests",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "dotnet",
+            "args": [
+                "test",
+                "${workspaceFolder}/test/WsdlExMachina.CSharpGenerator.Tests/WsdlExMachina.CSharpGenerator.Tests.csproj",
+                "--filter",
+                "${input:testFilter}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Debug Parser Tests",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "dotnet",
+            "args": [
+                "test",
+                "${workspaceFolder}/test/WsdlExMachina.Parser.Tests/WsdlExMachina.Parser.Tests.csproj",
+                "--filter",
+                "${input:testFilter}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testFilter",
+            "type": "promptString",
+            "description": "Filter for tests (e.g., FullyQualifiedName~RoslynClientGeneratorTests)",
+            "default": ""
+        }
+    ]
+}

@@ -39,7 +39,7 @@ public class ElementBuilder(XElement elementElement, string schemaNamespace)
 
         // Parse min/max occurs
         var minOccursAttr = _elementElement.Attribute("minOccurs");
-        if (minOccursAttr != null && int.TryParse(minOccursAttr.Value, out int minOccurs))
+        if (minOccursAttr != null && int.TryParse(minOccursAttr.Value, out var minOccurs))
         {
             _element.MinOccurs = minOccurs;
             _element.IsOptional = minOccurs == 0;
@@ -53,7 +53,7 @@ public class ElementBuilder(XElement elementElement, string schemaNamespace)
                 _element.MaxOccurs = int.MaxValue;
                 _element.IsArray = true;
             }
-            else if (int.TryParse(maxOccursAttr.Value, out int maxOccurs))
+            else if (int.TryParse(maxOccursAttr.Value, out var maxOccurs))
             {
                 _element.MaxOccurs = maxOccurs;
                 _element.IsArray = maxOccurs > 1;
@@ -67,7 +67,7 @@ public class ElementBuilder(XElement elementElement, string schemaNamespace)
             _element.IsComplexType = true;
 
             // Generate a name for the complex type based on the element name
-            string complexTypeName = _element.Name + "Type";
+            var complexTypeName = _element.Name + "Type";
 
             // Create a new XElement for the complex type with the generated name
             var namedComplexTypeElement = new XElement(complexTypeElement);

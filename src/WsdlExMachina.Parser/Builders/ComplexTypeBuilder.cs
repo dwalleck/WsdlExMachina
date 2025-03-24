@@ -77,7 +77,7 @@ public class ComplexTypeBuilder(XElement complexTypeElement, string schemaNamesp
         if (_complexType.Name.StartsWith("ArrayOf", StringComparison.OrdinalIgnoreCase))
         {
             // Extract the element type from the name
-            string elementTypeName = _complexType.Name.Substring("ArrayOf".Length);
+            var elementTypeName = _complexType.Name.Substring("ArrayOf".Length);
 
             // Check if this is a simple array with a single element
             var sequenceElement = _complexTypeElement.Descendants().FirstOrDefault(e => e.Name.LocalName == "sequence");

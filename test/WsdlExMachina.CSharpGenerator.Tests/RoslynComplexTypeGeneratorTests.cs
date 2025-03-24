@@ -101,7 +101,7 @@ public class RoslynComplexTypeGeneratorTests
 
         Assert.Equal(complexType.Elements.Count, properties.Count);
 
-        for (int i = 0; i < complexType.Elements.Count; i++)
+        for (var i = 0; i < complexType.Elements.Count; i++)
         {
             var element = complexType.Elements[i];
             var property = properties[i];

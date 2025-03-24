@@ -1,0 +1,16 @@
+{
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "csharp.format.enable": true,
+    "dotnet.defaultSolution": "WsdlExMachina.sln",
+    "omnisharp.enableEditorConfigSupport": true,
+    "omnisharp.useModernNet": true,
+    "files.exclude": {
+        "**/bin": true,
+        "**/obj": true
+    },
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.patterns": {
+        "*.cs": "${capture}.*.cs"
+    }
+}

@@ -43,7 +43,7 @@ public static class WsdlSpecialCaseHandler
         // Check for "ArrayOfX" naming pattern
         if (complexType.Name.StartsWith("ArrayOf", StringComparison.OrdinalIgnoreCase))
         {
-            string elementTypeName = complexType.Name.Substring("ArrayOf".Length);
+            var elementTypeName = complexType.Name.Substring("ArrayOf".Length);
 
             // Check if this is a simple array with a single element
             var sequenceElement = complexTypeElement.Descendants().FirstOrDefault(e => e.Name.LocalName == "sequence");
@@ -92,16 +92,16 @@ public static class WsdlSpecialCaseHandler
             .FirstOrDefault(e => e.Name.LocalName == "sequence" &&
                                  e.Elements().Any(el => el.Name.LocalName == "element" &&
                                                        (el.Attribute("maxOccurs")?.Value == "unbounded" ||
-                                                        (int.TryParse(el.Attribute("maxOccurs")?.Value, out int maxOccurs) && maxOccurs > 1))));
+                                                        (int.TryParse(el.Attribute("maxOccurs")?.Value, out var maxOccurs) && maxOccurs > 1))));
 
         if (sequenceWithUnboundedElement != null)
         {
             var unboundedElement = sequenceWithUnboundedElement.Elements()
                 .First(e => e.Name.LocalName == "element" &&
                            (e.Attribute("maxOccurs")?.Value == "unbounded" ||
-                            (int.TryParse(e.Attribute("maxOccurs")?.Value, out int maxOccurs) && maxOccurs > 1)));
+                            (int.TryParse(e.Attribute("maxOccurs")?.Value, out var maxOccurs) && maxOccurs > 1)));
 
-            string? elementType = unboundedElement.Attribute("type")?.Value;
+            var elementType = unboundedElement.Attribute("type")?.Value;
             if (!string.IsNullOrEmpty(elementType))
             {
                 var (localName, namespaceUri) = QualifiedNameParser.Parse(elementType, unboundedElement, schemaNamespace);
@@ -126,7 +126,7 @@ public static class WsdlSpecialCaseHandler
     {
         foreach (var importElement in schemaElement.Elements().Where(e => e.Name.LocalName == "import"))
         {
-            string? importedNamespace = importElement.Attribute("namespace")?.Value;
+            var importedNamespace = importElement.Attribute("namespace")?.Value;
             if (!string.IsNullOrEmpty(importedNamespace))
             {
                 // In a real implementation, we would need to resolve and load the imported schema
@@ -167,7 +167,7 @@ public static class WsdlSpecialCaseHandler
             {
                 // For overloaded operations, we need to distinguish them somehow
                 // One approach is to append a suffix based on input/output messages
-                for (int i = 0; i < group.Value.Count; i++)
+                for (var i = 0; i < group.Value.Count; i++)
                 {
                     var operationElement = group.Value[i];
                     var operation = new WsdlOperation

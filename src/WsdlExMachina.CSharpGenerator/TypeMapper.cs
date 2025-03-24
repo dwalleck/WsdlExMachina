@@ -136,7 +136,7 @@ public class TypeMapper
 
         // Split by dots and capitalize each segment
         var segments = ns.Split('.');
-        for (int i = 0; i < segments.Length; i++)
+        for (var i = 0; i < segments.Length; i++)
         {
             if (string.IsNullOrEmpty(segments[i]))
             {

@@ -21,23 +21,6 @@ public class CSharpGenerator
     }
 
     /// <summary>
-    /// Generates C# code from a WSDL definition.
-    /// </summary>
-    /// <param name="wsdl">The WSDL definition.</param>
-    /// <returns>A <see cref="GeneratedCodeResult"/> containing the generated code.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="wsdl"/> is null.</exception>
-    /// <exception cref="CodeGenerationException">Thrown when an error occurs during code generation.</exception>
-    public GeneratedCodeResult Generate(WsdlDefinition wsdl)
-    {
-        // Extract namespace from WSDL target namespace
-        string namespaceName = string.IsNullOrEmpty(wsdl.TargetNamespace)
-            ? "DefaultNamespace"
-            : _typeMapper.GetCSharpNamespace(wsdl.TargetNamespace);
-
-        return Generate(wsdl, namespaceName);
-    }
-
-    /// <summary>
     /// Generates C# code from a WSDL definition with a specified namespace.
     /// </summary>
     /// <param name="wsdl">The WSDL definition.</param>
@@ -61,7 +44,7 @@ public class CSharpGenerator
 
             // Generate all types at once
             var generatedCode = _generator.GenerateAll(wsdl, namespaceName);
-            foreach (KeyValuePair<string, string> entry in generatedCode)
+            foreach (var entry in generatedCode)
             {
                 result.Files.Add(entry.Key, entry.Value);
             }
@@ -155,7 +138,7 @@ public class GeneratedCodeResult
     private void CreateProjectFile(string directory)
     {
         // Extract namespace from the first file (assuming all files use the same namespace)
-        string namespaceName = "Generated";
+        var namespaceName = "Generated";
         foreach (var file in Files.Values)
         {
             var namespaceMatch = System.Text.RegularExpressions.Regex.Match(file, @"namespace\s+([^\s{;]+)");
@@ -228,7 +211,7 @@ public class GeneratedCodeResult
             var soapClientBaseContent = File.ReadAllText(soapClientBasePath);
 
             // Extract namespace from the first file (assuming all files use the same namespace)
-            string namespaceName = "Generated";
+            var namespaceName = "Generated";
             foreach (var file in Files.Values)
             {
                 var namespaceMatch = System.Text.RegularExpressions.Regex.Match(file, @"namespace\s+([^\s{;]+)");

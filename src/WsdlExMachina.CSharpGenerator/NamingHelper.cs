@@ -137,7 +137,7 @@ public class NamingHelper
 
         // Split by dots and process each segment
         var segments = name.Split('.');
-        for (int i = 0; i < segments.Length; i++)
+        for (var i = 0; i < segments.Length; i++)
         {
             if (string.IsNullOrEmpty(segments[i]))
             {
