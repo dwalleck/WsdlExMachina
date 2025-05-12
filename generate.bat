@@ -4,7 +4,6 @@ setlocal
 REM Check if WSDL file is provided
 if "%~1"=="" (
     echo Usage: %0 ^<wsdl-file^> [output-dir] [namespace]
-    echo Example: %0 samples\ACH.wsdl Generated.ACH MyCompany.ACH
     exit /b 1
 )
 

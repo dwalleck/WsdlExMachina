@@ -39,13 +39,13 @@ The easiest way to use WsdlExMachina is with the provided convenience scripts:
 chmod +x generate.sh
 
 # Generate code from a WSDL file
-./generate.sh samples/ACH.wsdl Generated.ACH MyCompany.ACH
+./generate.sh MySoapApi.wsdl Generated.MySoapApi MyCompany.MyNamespae
 ```
 
 **On Windows:**
 ```batch
 # Generate code from a WSDL file
-generate.bat samples\ACH.wsdl Generated.ACH MyCompany.ACH
+generate.bat Service.wsdl Generated.Service MyCompany.ServiceClient
 ```
 
 The scripts accept the following parameters:
@@ -86,59 +86,7 @@ wsdl-generator --wsdl path/to/service.wsdl --output Generated --namespace MyComp
 
 Once you've generated the code, you can use it in your project to call SOAP services. Here's a simple example:
 
-```csharp
-using System;
-using System.Threading.Tasks;
-using Generated.ACH;
-
-namespace Examples
-{
-    public class ClientUsageExample
-    {
-        public static async Task Main(string[] args)
-        {
-            // Create a new client with the endpoint URL
-            var client = new ACHTransactionClient("https://api.example.com/soap/ach");
-
-            // Set up basic authentication if needed
-            client.Username = "username";
-            client.Password = "password";
-
-            try
-            {
-                // Create a request
-                var request = new PostSinglePaymentRequest
-                {
-                    // Set request properties
-                    PostSinglePayment = new PostSinglePaymentType
-                    {
-                        // Fill in required fields
-                        AccountNumber = "123456789",
-                        RoutingNumber = "987654321",
-                        Amount = 100.00m,
-                        // Add other required fields
-                    }
-                };
-
-                // Call the service asynchronously
-                var response = await client.PostSinglePaymentAsync(request);
-
-                // Process the response
-                Console.WriteLine($"Transaction ID: {response.TransactionId}");
-                Console.WriteLine($"Status: {response.Status}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine($"Inner Error: {ex.InnerException.Message}");
-                }
-            }
-        }
-    }
-}
-```
+// Add back in
 
 See the `examples` directory for more examples.
 
@@ -150,7 +98,6 @@ See the `examples` directory for more examples.
 - `src/WsdlExMachina.Cli.Generator`: Command-line tool for generating code
 - `test/WsdlExMachina.Parser.Tests`: Tests for the parser
 - `test/WsdlExMachina.CSharpGenerator.Tests`: Tests for the code generator
-- `examples`: Example code showing how to use the generated code
 
 ## License
 

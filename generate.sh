@@ -3,7 +3,6 @@
 # Check if WSDL file is provided
 if [ -z "$1" ]; then
     echo "Usage: $0 <wsdl-file> [output-dir] [namespace]"
-    echo "Example: $0 samples/ACH.wsdl Generated.ACH MyCompany.ACH"
     exit 1
 fi
 
