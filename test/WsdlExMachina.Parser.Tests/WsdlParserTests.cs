@@ -2,6 +2,7 @@ using System.IO;
 using Xunit;
 using WsdlExMachina.Parser;
 using WsdlExMachina.Parser.Models;
+using WsdlExMachina.Parser.Tests.Utilities;
 
 namespace WsdlExMachina.Parser.Tests;
 
@@ -12,7 +13,7 @@ public class WsdlParserTests
     {
         // Arrange
         var parser = new WsdlParser();
-        var filePath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+        var filePath = TestFileHelper.GetSamplePath("sample.wsdl");
 
         // Act
         var wsdlDefinition = parser.ParseFile(filePath);
@@ -56,7 +57,7 @@ public class WsdlParserTests
     {
         // Arrange
         var parser = new WsdlParser();
-        var filePath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+        var filePath = TestFileHelper.GetSamplePath("sample.wsdl");
 
         // Act
         var wsdlDefinition = parser.ParseFile(filePath);
@@ -85,7 +86,7 @@ public class WsdlParserTests
     {
         // Arrange
         var parser = new WsdlParser();
-        var filePath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+        var filePath = TestFileHelper.GetSamplePath("sample.wsdl");
 
         // Act
         var wsdlDefinition = parser.ParseFile(filePath);
@@ -110,7 +111,7 @@ public class WsdlParserTests
     {
         // Arrange
         var parser = new WsdlParser();
-        var filePath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+        var filePath = TestFileHelper.GetSamplePath("sample.wsdl");
 
         // Act
         var wsdlDefinition = parser.ParseFile(filePath);

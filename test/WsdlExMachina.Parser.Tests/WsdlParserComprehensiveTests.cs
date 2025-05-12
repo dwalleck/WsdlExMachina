@@ -5,12 +5,13 @@ using System.Xml.Linq;
 using Xunit;
 using WsdlExMachina.Parser;
 using WsdlExMachina.Parser.Models;
+using WsdlExMachina.Parser.Tests.Utilities;
 
 namespace WsdlExMachina.Parser.Tests;
 
 public class WsdlParserComprehensiveTests
 {
-    private readonly string _sampleWsdlPath = Path.Combine("..", "..", "..", "..", "..", "samples", "ACH.wsdl");
+    private readonly string _sampleWsdlPath = TestFileHelper.GetSamplePath("sample.wsdl");
 
     #region Public Methods Tests
 

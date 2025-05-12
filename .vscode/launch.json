@@ -9,7 +9,7 @@
             "program": "${workspaceFolder}/src/WsdlExMachina.Cli.Generator/bin/Debug/net9.0/WsdlExMachina.Cli.Generator.dll",
             "args": [
                 "--wsdl",
-                "${workspaceFolder}/samples/ACH.wsdl",
+                "${workspaceFolder}/samples/sample.wsdl",
                 "--output",
                 "${workspaceFolder}/Generated",
                 "--namespace",
